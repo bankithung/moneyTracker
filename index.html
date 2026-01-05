@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wealth Planner Ultimate</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --bg: #f3f4f6;
+            --surface: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --border: #e5e7eb;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --needs: #3b82f6;
+            --wants: #f59e0b;
+            --savings: #10b981;
+        }
+
+        [data-theme="dark"] {
+            --bg: #111827;
+            --surface: #1f2937;
+            --text-main: #f9fafb;
+            --text-sub: #9ca3af;
+            --border: #374151;
+            --primary: #6366f1;
+        }
+
+        /* --- GLOBAL LAYOUT --- */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 15px; 
+            transition: background 0.3s, color 0.3s; 
+            line-height: 1.5;
+            box-sizing: border-box;
+        }
+        
+        *, *:before, *:after { box-sizing: inherit; }
+        
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        /* --- HEADER & NAV --- */
+        header { 
+            background: var(--surface); 
+            padding: 15px 20px; 
+            border-radius: 16px; 
+            margin-bottom: 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+        }
+        
+        .brand { font-weight: 800; font-size: 1.3rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        
+        .tab-nav { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
+        .tab-btn { 
+            flex: 1; 
+            white-space: nowrap;
+            padding: 12px; 
+            border: none; 
+            background: var(--surface); 
+            color: var(--text-sub); 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: 0.2s; 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
+        }
+        .tab-btn.active { background: var(--primary); color: white; transform: translateY(-1px); }
+
+        /* --- MONTH NAVIGATOR --- */
+        .month-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            background: var(--surface);
+            padding: 15px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        .month-title { font-size: 1.2rem; font-weight: 800; min-width: 180px; text-align: center; }
+        .nav-btn { background: var(--bg); border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display:flex; align-items:center; justify-content:center; color: var(--text-main); transition: 0.2s; }
+        .nav-btn:hover { background: var(--border); }
+
+        /* --- CARDS & GRID --- */
+        .grid-2 { display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 20px; }
+        .card { background: var(--surface); padding: 20px; border-radius: 16px; margin-bottom: 20px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        
+        /* --- INPUTS (FIXED RESPONSIVENESS) --- */
+        .input-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        
+        /* Updated Input CSS: Removed aggressive min-width */
+        input, select { 
+            padding: 12px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border); 
+            background: var(--surface); 
+            color: var(--text-main); 
+            outline: none; 
+            flex: 1; 
+            width: 100%; /* Ensure it fills container */
+            min-width: 0; /* Critical Fix: Allows input to shrink on small screens */
+            font-size: 16px; /* Prevents iOS zoom */
+        }
+        input:focus, select:focus { border-color: var(--primary); }
+
+        /* --- BUTTONS --- */
+        .btn { padding: 12px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; display: inline-flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s; white-space: nowrap; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-sub); }
+
+        /* --- PROGRESS BARS --- */
+        .bar-group { margin-bottom: 18px; }
+        .bar-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px; font-weight: 600; }
+        .bar-bg { background: var(--border); height: 10px; border-radius: 5px; overflow: hidden; }
+        .bar-fill { height: 100%; transition: width 0.5s ease; border-radius: 5px; }
+
+        /* --- ADVISOR & LIST --- */
+        .advice-card { border-left: 5px solid var(--primary); padding: 12px 15px; margin-bottom: 15px; background: rgba(0,0,0,0.02); border-radius: 0 8px 8px 0; }
+        .advice-card.warning { border-color: var(--danger); background: rgba(239, 68, 68, 0.05); }
+        .advice-card.good { border-color: var(--success); background: rgba(16, 185, 129, 0.05); }
+        .tx-list { list-style: none; padding: 0; }
+        .tx-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: center; }
+
+        /* --- SETTINGS MODAL (FIXED) --- */
+        #settingsModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(3px); }
+        
+        .modal-content { 
+            background: var(--surface); 
+            padding: 25px; 
+            border-radius: 20px; 
+            width: 90%; 
+            max-width: 450px; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+        }
+
+        /* Updated Rule Grid: Responsive Columns */
+        .rule-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr; /* 3 columns on desktop */
+            gap: 10px; 
+            margin-top: 10px; 
+        }
+
+        /* --- RESPONSIVE MOBILE ENGINE --- */
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; } /* Stack dashboard */
+            
+            header { flex-direction: column; gap: 15px; align-items: flex-start; }
+            header .controls { width: 100%; display: flex; justify-content: space-between; margin-top: 5px; }
+            
+            /* Stack Inputs on Dashboard */
+            .input-group { flex-direction: column; }
+            .input-group input, .input-group select, .input-group button { width: 100%; }
+            
+            .tab-nav { justify-content: space-between; }
+            .tab-btn { padding: 10px; font-size: 0.9rem; }
+            
+            .month-nav { gap: 10px; }
+            .month-title { font-size: 1rem; min-width: 140px; }
+            
+            .tx-item { font-size: 0.9rem; }
+
+            /* Fix Settings Modal for Mobile */
+            .rule-grid {
+                grid-template-columns: 1fr; /* Stack Rules Vertically on Mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <header>
+        <div class="brand">
+            <span>🚀</span> Wealth Planner
+        </div>
+        <div class="controls">
+            <button class="btn btn-outline" onclick="openSettings()">⚙️ Settings</button>
+            <button class="btn btn-outline" onclick="toggleTheme()">🌗</button>
+        </div>
+    </header>
+
+    <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('dashboard')">Plan & Track</button>
+        <button class="tab-btn" onclick="switchTab('history')">Full History</button>
+        <button class="tab-btn" onclick="switchTab('advisor')">Smart Advisor</button>
+    </div>
+
+    <div id="view-dashboard" class="view-section">
+        
+        <div class="month-nav">
+            <button class="nav-btn" onclick="changeMonth(-1)">&#10094;</button>
+            <div class="month-title" id="currentMonthDisplay">Loading...</div>
+            <button class="nav-btn" onclick="changeMonth(1)">&#10095;</button>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <div class="card">
+                    <h3 style="margin-top:0">Add for <span id="addLabel" style="color:var(--primary)">this month</span></h3>
+                    <div class="input-group">
+                        <input type="text" id="desc" placeholder="What? (e.g. Rent)">
+                        <input type="number" id="amt" placeholder="Amount">
+                        <select id="cat">
+                            <option value="needs">Needs</option>
+                            <option value="wants">Wants</option>
+                            <option value="savings">Savings</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="addTx()">+ Add</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-top:0">Transactions</h3>
+                    <ul class="tx-list" id="txList">
+                        <li style="color:var(--text-sub); text-align:center; padding:20px;">No transactions for this month yet.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div>
+                <div class="card" style="text-align: center;">
+                    <small style="color:var(--text-sub); font-weight:600; letter-spacing:1px;">REMAINING BALANCE</small>
+                    <h1 id="monthBalance" style="margin: 10px 0; color:var(--primary); font-size: 2.5rem;">0</h1>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; font-size:0.9rem; padding-top:15px; border-top:1px solid var(--border);">
+                        <div>Income<br><b id="lblInc" style="color:var(--success); font-size:1.1rem;">0</b></div>
+                        <div>Spent<br><b id="lblExp" style="color:var(--danger); font-size:1.1rem;">0</b></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-top:0">Budget Health</h3>
+                    <div id="statusBars"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-history" class="view-section" style="display:none;">
+        <div class="card">
+            <h3>📅 Yearly Overview</h3>
+            <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; min-width:500px;">
+                    <thead>
+                        <tr style="text-align:left; border-bottom:2px solid var(--border); color:var(--text-sub);">
+                            <th style="padding:10px;">Month</th>
+                            <th style="padding:10px;">Income</th>
+                            <th style="padding:10px;">Spent</th>
+                            <th style="padding:10px;">Saved</th>
+                            <th style="padding:10px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Backup / Restore</h3>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-outline" onclick="downloadBackup()">💾 Save Data to File</button>
+                <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">📂 Load Data File</button>
+                <input type="file" id="importFile" style="display:none" onchange="importData(this)">
+            </div>
+        </div>
+    </div>
+
+    <div id="view-advisor" class="view-section" style="display:none;">
+        <div class="card">
+            <h3>🤖 Analysis for <span id="advisorMonth">Selected Month</span></h3>
+            <div id="adviceContainer"></div>
+        </div>
+    </div>
+</div>
+
+<div id="settingsModal">
+    <div class="modal-content">
+        <h2 style="margin-top:0">Settings</h2>
+        
+        <label style="font-weight:600; font-size:0.9rem;">Standard Monthly Income</label>
+        <div class="input-group" style="margin-bottom:15px;">
+            <input type="number" id="setIncome" placeholder="0.00">
+        </div>
+
+        <label style="font-weight:600; font-size:0.9rem;">Currency Symbol</label>
+        <div class="input-group" style="margin-bottom:20px;">
+            <select id="setCurrency">
+                <option value="$">$ Dollar</option>
+                <option value="₹">₹ Rupee</option>
+                <option value="€">€ Euro</option>
+                <option value="£">£ Pound</option>
+                <option value="¥">¥ Yen</option>
+            </select>
+        </div>
+
+        <div style="border-top:1px solid var(--border); padding-top:15px; margin-bottom:20px;">
+            <label style="font-weight:600; font-size:0.9rem;">Your Rules (Must sum to 100%)</label>
+            <div class="rule-grid">
+                <div>
+                    <small>Needs %</small>
+                    <input type="number" id="ruleNeeds">
+                </div>
+                <div>
+                    <small>Wants %</small>
+                    <input type="number" id="ruleWants">
+                </div>
+                <div>
+                    <small>Save %</small>
+                    <input type="number" id="ruleSavings">
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-primary" style="flex:1" onclick="saveSettings()">Save Changes</button>
+            <button class="btn btn-outline" style="flex:1" onclick="closeSettings()">Cancel</button>
+        </div>
+        <button class="btn btn-outline" style="width:100%; margin-top:15px; color:var(--danger); border-color:var(--danger)" onclick="wipeData()">Reset Everything</button>
+    </div>
+</div>
+
+<script>
+    // --- APP STATE ---
+    let db = {
+        income: 0,
+        currency: '$',
+        theme: 'light',
+        rules: { needs: 50, wants: 30, savings: 20 },
+        txs: []
+    };
+
+    // View State
+    let viewDate = new Date();
+
+    // --- INIT ---
+    function init() {
+        const saved = localStorage.getItem('wealthPlanner_v5');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            db = { ...db, ...parsed }; 
+            if(!db.rules) db.rules = { needs: 50, wants: 30, savings: 20 };
+        } else {
+            openSettings();
+        }
+        
+        applyTheme();
+        render();
+    }
+
+    function saveDB() {
+        localStorage.setItem('wealthPlanner_v5', JSON.stringify(db));
+    }
+
+    // --- MONTH NAVIGATION LOGIC ---
+    function changeMonth(offset) {
+        viewDate.setMonth(viewDate.getMonth() + offset);
+        render();
+    }
+
+    function getMonthKey(dateObj) {
+        return dateObj.toISOString().slice(0, 7);
+    }
+
+    function getReadableMonth(dateObj) {
+        return dateObj.toLocaleDateString('default', { month: 'long', year: 'numeric' });
+    }
+
+    // --- CORE FUNCTIONS ---
+    function addTx() {
+        const desc = document.getElementById('desc').value;
+        const amt = parseFloat(document.getElementById('amt').value);
+        const cat = document.getElementById('cat').value;
+
+        if (!desc || isNaN(amt) || amt <= 0) return alert("Please check your inputs.");
+
+        // Add to currently viewed month
+        const newTxDate = new Date(viewDate);
+        const today = new Date();
+        if(getMonthKey(newTxDate) === getMonthKey(today)) {
+            newTxDate.setDate(today.getDate());
+        } else {
+            newTxDate.setDate(1);
+        }
+
+        db.txs.push({
+            id: Date.now(),
+            desc,
+            amt,
+            cat,
+            date: newTxDate.toISOString()
+        });
+
+        document.getElementById('desc').value = '';
+        document.getElementById('amt').value = '';
+        
+        saveDB();
+        render();
+    }
+
+    function deleteTx(id) {
+        if(confirm("Delete this transaction?")) {
+            db.txs = db.txs.filter(t => t.id !== id);
+            saveDB();
+            render();
+        }
+    }
+
+    // --- RENDER ENGINE ---
+    function render() {
+        const currentKey = getMonthKey(viewDate);
+        const cur = db.currency;
+
+        document.getElementById('currentMonthDisplay').innerText = getReadableMonth(viewDate);
+        document.getElementById('addLabel').innerText = getReadableMonth(viewDate);
+        document.getElementById('advisorMonth').innerText = getReadableMonth(viewDate);
+
+        const monthTxs = db.txs.filter(t => t.date.startsWith(currentKey));
+        
+        let spent = 0;
+        let cats = { needs: 0, wants: 0, savings: 0 };
+
+        monthTxs.forEach(t => {
+            spent += t.amt;
+            if(cats[t.cat] !== undefined) cats[t.cat] += t.amt;
+        });
+
+        const balance = db.income - spent;
+
+        document.getElementById('monthBalance').innerText = cur + balance.toLocaleString();
+        document.getElementById('lblInc').innerText = cur + db.income.toLocaleString();
+        document.getElementById('lblExp').innerText = cur + spent.toLocaleString();
+
+        const list = document.getElementById('txList');
+        list.innerHTML = '';
+        if (monthTxs.length === 0) {
+            list.innerHTML = `<li style="color:var(--text-sub); text-align:center; padding:20px;">Empty budget for this month. Start planning!</li>`;
+        } else {
+            [...monthTxs].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
+                const dateStr = new Date(t.date).getDate();
+                let color = 'var(--text-main)';
+                if(t.cat === 'needs') color = 'var(--needs)';
+                if(t.cat === 'wants') color = 'var(--wants)';
+                if(t.cat === 'savings') color = 'var(--savings)';
+
+                list.innerHTML += `
+                <li class="tx-item">
+                    <div>
+                        <span style="font-weight:600">${t.desc}</span>
+                        <br>
+                        <small style="color:${color}; font-weight:bold; text-transform:uppercase; font-size:0.75rem;">${t.cat}</small> 
+                        <small style="color:var(--text-sub)"> • Day ${dateStr}</small>
+                    </div>
+                    <div style="text-align:right">
+                        <span style="font-weight:bold; display:block">-${cur}${t.amt.toLocaleString()}</span>
+                        <button style="border:none; background:none; color:var(--text-sub); font-size:1.2rem; cursor:pointer; padding:0 5px;" onclick="deleteTx(${t.id})">×</button>
+                    </div>
+                </li>`;
+            });
+        }
+
+        renderBars(cats);
+        renderAdvisor(cats, spent);
+        renderHistory();
+    }
+
+    function renderBars(cats) {
+        const container = document.getElementById('statusBars');
+        container.innerHTML = '';
+        const cur = db.currency;
+
+        const limits = {
+            needs: db.income * (db.rules.needs / 100),
+            wants: db.income * (db.rules.wants / 100),
+            savings: db.income * (db.rules.savings / 100)
+        };
+
+        const draw = (label, val, max, color) => {
+            let pct = max > 0 ? (val / max) * 100 : 0;
+            let visualPct = pct > 100 ? 100 : pct;
+            let statusColor = color;
+            if(val > max) statusColor = 'var(--danger)';
+
+            return `
+            <div class="bar-group">
+                <div class="bar-label">
+                    <span>${label}</span>
+                    <span style="color:${val > max ? 'var(--danger)' : 'inherit'}">${cur}${val.toLocaleString()} / ${cur}${max.toLocaleString()}</span>
+                </div>
+                <div class="bar-bg">
+                    <div class="bar-fill" style="width:${visualPct}%; background:${statusColor}"></div>
+                </div>
+            </div>`;
+        };
+
+        container.innerHTML += draw(`Needs (${db.rules.needs}%)`, cats.needs, limits.needs, 'var(--needs)');
+        container.innerHTML += draw(`Wants (${db.rules.wants}%)`, cats.wants, limits.wants, 'var(--wants)');
+        container.innerHTML += draw(`Savings (${db.rules.savings}%)`, cats.savings, limits.savings, 'var(--savings)');
+    }
+
+    function renderAdvisor(cats, totalSpent) {
+        const container = document.getElementById('adviceContainer');
+        container.innerHTML = '';
+        
+        const totalPct = db.income > 0 ? (totalSpent / db.income) * 100 : 0;
+        const wantsPct = db.income > 0 ? (cats.wants / db.income) * 100 : 0;
+        
+        const card = (title, text, type) => {
+            container.innerHTML += `<div class="advice-card ${type}"><div style="font-weight:700; margin-bottom:5px;">${title}</div><div style="font-size:0.9rem; color:var(--text-sub)">${text}</div></div>`;
+        }
+
+        if(db.income === 0) return card("⚠️ Setup Required", "Please go to Settings and set your Monthly Income.", "warning");
+
+        if(totalPct > 100) {
+            card("🚨 Over Budget", `You are spending ${totalPct.toFixed(1)}% of your income! You must cut back immediately.`, "warning");
+        } else if (totalPct < 85) {
+            card("✅ Good Status", `You are currently under budget (${totalPct.toFixed(1)}%). Great job.`, "good");
+        }
+
+        if(wantsPct > db.rules.wants) {
+            card("⚠️ Wants Alert", `You exceeded your "Wants" limit of ${db.rules.wants}%.`, "warning");
+        }
+
+        if(cats.savings === 0 && totalSpent > 0) {
+            card("💡 Savings Tip", "You haven't allocated any money to Savings yet this month.", "");
+        }
+    }
+
+    function renderHistory() {
+        const tbody = document.getElementById('historyBody');
+        tbody.innerHTML = '';
+        const groups = {};
+        
+        db.txs.forEach(t => {
+            const m = t.date.slice(0, 7);
+            if(!groups[m]) groups[m] = 0;
+            groups[m] += t.amt;
+        });
+
+        Object.keys(groups).sort().reverse().forEach(key => {
+            const [y, m] = key.split('-');
+            const name = new Date(y, m-1).toLocaleString('default', { month: 'long', year: 'numeric' });
+            const spent = groups[key];
+            const saved = db.income - spent;
+            const status = saved >= 0 ? 'Saved' : 'Over';
+            const statusColor = saved >= 0 ? 'var(--success)' : 'var(--danger)';
+
+            tbody.innerHTML += `
+            <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:10px;"><b>${name}</b></td>
+                <td style="padding:10px;">${db.currency}${db.income}</td>
+                <td style="padding:10px;">${db.currency}${spent}</td>
+                <td style="padding:10px; color:${statusColor}">${db.currency}${saved}</td>
+                <td style="padding:10px;"><span style="background:${statusColor}; color:white; padding:2px 6px; border-radius:4px; font-size:0.75rem;">${status}</span></td>
+            </tr>`;
+        });
+    }
+
+    // --- UI HELPERS ---
+    function switchTab(id) {
+        document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+        document.getElementById('view-' + id).style.display = 'block';
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    function openSettings() {
+        document.getElementById('settingsModal').style.display = 'flex';
+        document.getElementById('setIncome').value = db.income;
+        document.getElementById('setCurrency').value = db.currency;
+        document.getElementById('ruleNeeds').value = db.rules.needs;
+        document.getElementById('ruleWants').value = db.rules.wants;
+        document.getElementById('ruleSavings').value = db.rules.savings;
+    }
+    function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+    
+    function saveSettings() {
+        db.income = parseFloat(document.getElementById('setIncome').value) || 0;
+        db.currency = document.getElementById('setCurrency').value;
+        
+        const rn = parseFloat(document.getElementById('ruleNeeds').value) || 0;
+        const rw = parseFloat(document.getElementById('ruleWants').value) || 0;
+        const rs = parseFloat(document.getElementById('ruleSavings').value) || 0;
+        
+        if (Math.abs((rn + rw + rs) - 100) > 0.1) return alert("Percent rules must add up to 100%");
+        
+        db.rules = { needs: rn, wants: rw, savings: rs };
+        saveDB();
+        render();
+        closeSettings();
+    }
+
+    function toggleTheme() {
+        db.theme = db.theme === 'light' ? 'dark' : 'light';
+        applyTheme();
+        saveDB();
+    }
+    function applyTheme() { document.body.setAttribute('data-theme', db.theme); }
+
+    function downloadBackup() {
+        const a = document.createElement('a');
+        a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        a.download = "wealth_planner_backup.json";
+        a.click();
+    }
+    
+    function importData(input) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                db = JSON.parse(e.target.result);
+                saveDB();
+                render();
+                alert("Data restored successfully!");
+            } catch(err) { alert("Error reading file"); }
+        };
+        reader.readAsText(input.files[0]);
+    }
+    
+    function wipeData() {
+        if(confirm("Are you sure you want to delete ALL data? This cannot be undone.")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
