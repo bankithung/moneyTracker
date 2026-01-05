@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Wealth Planner Ultimate v8</title>
+    <title>Wealth Planner Ultimate v9</title>
     
     <style>
         :root {
@@ -20,7 +20,7 @@
             --needs: #3b82f6;
             --wants: #f59e0b;
             --savings: #10b981;
-            --income: #059669; /* Dark Green for Income */
+            --income: #059669;
         }
 
         [data-theme="dark"] {
@@ -137,6 +137,20 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-sub); }
 
+        /* --- FILTER DROPDOWN STYLE --- */
+        .tx-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; margin-top: 0;}
+        .filter-select {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text-main);
+            width: auto;
+            flex: none;
+            cursor: pointer;
+        }
+
         /* --- PAGINATION CONTROLS --- */
         .pagination { display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); align-items: center; }
         .page-info { font-size: 0.85rem; color: var(--text-sub); }
@@ -244,7 +258,17 @@
                 </div>
 
                 <div class="card">
-                    <h3 style="margin-top:0">Transactions</h3>
+                    <div class="tx-header">
+                        <h3 style="margin:0">Transactions</h3>
+                        <select id="filterTx" class="filter-select" onchange="applyFilter()">
+                            <option value="all">Show All</option>
+                            <option value="needs">Needs Only</option>
+                            <option value="wants">Wants Only</option>
+                            <option value="savings">Savings Only</option>
+                            <option value="income">Income Only</option>
+                        </select>
+                    </div>
+                    
                     <div style="font-size:0.8rem; color:var(--text-sub); margin-bottom:10px;">💡 Drag items to reorder them</div>
                     
                     <ul class="tx-list" id="txList">
@@ -373,11 +397,12 @@
         currency: '$',
         theme: 'light',
         rules: { needs: 50, wants: 30, savings: 20 },
-        txs: [] // { id, desc, amt, cat, date, order }
+        txs: [] 
     };
     
     let viewDate = new Date();
     let editingId = null;
+    let currentFilter = 'all'; // New Filter State
     
     // Pagination State
     let currentPage = 1;
@@ -385,11 +410,10 @@
 
     // --- INIT ---
     function init() {
-        const saved = localStorage.getItem('wealthPlanner_v8'); // New Version Key
+        const saved = localStorage.getItem('wealthPlanner_v9');
         if (saved) {
             const parsed = JSON.parse(saved);
             db = { ...db, ...parsed }; 
-            // Graceful handling of old versions
             if(!db.rules) db.rules = { needs: 50, wants: 30, savings: 20 };
         } else {
             openSettings();
@@ -400,21 +424,27 @@
     }
 
     function saveDB() {
-        localStorage.setItem('wealthPlanner_v8', JSON.stringify(db));
+        localStorage.setItem('wealthPlanner_v9', JSON.stringify(db));
     }
 
     // --- MONTH NAV ---
     function changeMonth(offset) {
         viewDate.setMonth(viewDate.getMonth() + offset);
-        currentPage = 1; // Reset to page 1 on month change
+        currentPage = 1; 
         cancelEdit();
         render();
     }
 
-    // --- PAGINATION NAV ---
+    // --- FILTER & PAGE NAV ---
     function changePage(offset) {
         currentPage += offset;
-        render(); // Rerender list
+        render();
+    }
+
+    function applyFilter() {
+        currentFilter = document.getElementById('filterTx').value;
+        currentPage = 1; // Reset page when filter changes
+        render();
     }
 
     function getMonthKey(dateObj) {
@@ -425,7 +455,7 @@
         return dateObj.toLocaleDateString('default', { month: 'long', year: 'numeric' });
     }
 
-    // --- CORE LOGIC (ADD/EDIT/DELETE) ---
+    // --- CORE LOGIC ---
     function addTx() {
         const desc = document.getElementById('desc').value;
         const amt = parseFloat(document.getElementById('amt').value);
@@ -434,7 +464,6 @@
         if (!desc || isNaN(amt) || amt <= 0) return alert("Please check your inputs.");
 
         if (editingId) {
-            // Update Existing
             const index = db.txs.findIndex(t => t.id === editingId);
             if (index !== -1) {
                 db.txs[index].desc = desc;
@@ -444,7 +473,6 @@
             editingId = null;
             resetFormUI();
         } else {
-            // Create New
             const newTxDate = new Date(viewDate);
             const today = new Date();
             if(getMonthKey(newTxDate) === getMonthKey(today)) {
@@ -453,7 +481,6 @@
                 newTxDate.setDate(1);
             }
 
-            // Find max order in this month to place new item at bottom
             const currentKey = getMonthKey(newTxDate);
             const monthTxs = db.txs.filter(t => t.date.startsWith(currentKey));
             const maxOrder = monthTxs.length > 0 ? Math.max(...monthTxs.map(t => t.order || 0)) : 0;
@@ -512,14 +539,14 @@
         }
     }
 
-    // --- DRAG AND DROP ENGINE ---
+    // --- DRAG AND DROP ---
     let draggedItem = null;
 
     function handleDragStart(e) {
         draggedItem = this;
         this.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', this.dataset.id); // Store ID
+        e.dataTransfer.setData('text/plain', this.dataset.id); 
     }
 
     function handleDragOver(e) {
@@ -535,17 +562,19 @@
 
     function handleDrop(e) {
         e.stopPropagation(); 
-        
         const draggedId = parseInt(e.dataTransfer.getData('text/plain'));
         const targetId = parseInt(this.dataset.id);
-
-        if (draggedId !== targetId) {
-            reorderTransactions(draggedId, targetId);
-        }
+        if (draggedId !== targetId) reorderTransactions(draggedId, targetId);
         return false;
     }
 
     function reorderTransactions(draggedId, targetId) {
+        // Warning: Drag and drop disabled while filtering to prevent logic errors
+        if(currentFilter !== 'all') {
+            alert("Please switch filter to 'Show All' to reorder items.");
+            return;
+        }
+
         const currentKey = getMonthKey(viewDate);
         let monthTxs = db.txs.filter(t => t.date.startsWith(currentKey)).sort((a,b) => (a.order || 0) - (b.order || 0));
         
@@ -575,16 +604,16 @@
         document.getElementById('addLabel').innerText = getReadableMonth(viewDate);
         document.getElementById('advisorMonth').innerText = getReadableMonth(viewDate);
 
-        // Filter Transactions
-        let monthTxs = db.txs.filter(t => t.date.startsWith(currentKey))
-                               .sort((a,b) => (a.order || 0) - (b.order || 0));
-        
-        // 1. Calculate Financials (Extra Income Logic)
+        // 1. Get All for Month (for Stats)
+        let allMonthTxs = db.txs.filter(t => t.date.startsWith(currentKey))
+                                .sort((a,b) => (a.order || 0) - (b.order || 0));
+
+        // 2. Calculate Financials
         let spent = 0;
         let extraIncome = 0;
         let cats = { needs: 0, wants: 0, savings: 0 };
 
-        monthTxs.forEach(t => {
+        allMonthTxs.forEach(t => {
             if (t.cat === 'income') {
                 extraIncome += t.amt;
             } else {
@@ -600,30 +629,33 @@
         document.getElementById('lblInc').innerText = cur + totalIncome.toLocaleString();
         document.getElementById('lblExp').innerText = cur + spent.toLocaleString();
 
-        // 2. Pagination Logic
-        const totalItems = monthTxs.length;
+        // 3. Filter List based on Dropdown
+        let filteredTxs = allMonthTxs;
+        if (currentFilter !== 'all') {
+            filteredTxs = allMonthTxs.filter(t => t.cat === currentFilter);
+        }
+
+        // 4. Pagination Logic
+        const totalItems = filteredTxs.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
         
-        // Ensure currentPage is valid
         if (currentPage < 1) currentPage = 1;
         if (currentPage > totalPages) currentPage = totalPages;
 
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
-        const pagedTxs = monthTxs.slice(startIndex, endIndex);
+        const pagedTxs = filteredTxs.slice(startIndex, endIndex);
 
-        // Update Buttons
         document.getElementById('pageIndicator').innerText = `Page ${currentPage} of ${totalPages}`;
         document.getElementById('prevBtn').disabled = (currentPage === 1);
         document.getElementById('nextBtn').disabled = (currentPage === totalPages);
 
-        // 3. Render List
+        // 5. Render List
         const list = document.getElementById('txList');
         list.innerHTML = '';
         
-        if (monthTxs.length === 0) {
-            list.innerHTML = `<li style="color:var(--text-sub); text-align:center; padding:20px;">Empty budget for this month. Start planning!</li>`;
-            // Hide pagination if empty
+        if (filteredTxs.length === 0) {
+            list.innerHTML = `<li style="color:var(--text-sub); text-align:center; padding:20px;">No transactions found.</li>`;
             document.querySelector('.pagination').style.display = 'none';
         } else {
              document.querySelector('.pagination').style.display = 'flex';
@@ -646,7 +678,6 @@
                 li.setAttribute('draggable', 'true');
                 li.dataset.id = t.id; 
 
-                // Drag Events
                 li.addEventListener('dragstart', handleDragStart);
                 li.addEventListener('dragover', handleDragOver);
                 li.addEventListener('dragleave', handleDragEnd);
@@ -715,10 +746,7 @@
     function renderAdvisor(cats, totalSpent, totalIncome) {
         const container = document.getElementById('adviceContainer');
         container.innerHTML = '';
-        
-        // Use totalIncome (Fixed + Extra) for calculations
         const incomeBase = totalIncome > 0 ? totalIncome : 1; 
-        
         const totalPct = (totalSpent / incomeBase) * 100;
         const wantsPct = (cats.wants / incomeBase) * 100;
         const card = (title, text, type) => {
@@ -747,12 +775,10 @@
         Object.keys(groups).sort().reverse().forEach(key => {
             const [y, m] = key.split('-');
             const name = new Date(y, m-1).toLocaleString('default', { month: 'long', year: 'numeric' });
-            
             const spent = groups[key].spent;
             const extra = groups[key].extraInc;
             const totalInc = db.income + extra;
             const saved = totalInc - spent;
-            
             const status = saved >= 0 ? 'Saved' : 'Over';
             const statusColor = saved >= 0 ? 'var(--success)' : 'var(--danger)';
             
