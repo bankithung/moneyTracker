@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block content %}
 <div class="container" style="max-width: 800px; padding-bottom: 80px;">
@@ -15,25 +16,48 @@
         </div>
     </header>
 
+    <!-- SUMMARY CARDS -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+        <div class="card" style="margin-bottom: 0; padding: 15px; display: flex; align-items: center; gap: 15px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                <i class="fa-solid fa-arrow-down"></i>
+            </div>
+            <div>
+                <span style="display: block; font-size: 0.75rem; color: var(--text-sub); text-transform: uppercase; font-weight: 600;">Income</span>
+                <span style="font-size: 1.1rem; font-weight: 700; color: #10b981;">{{ user.currency }}{{ total_income|floatformat:2|intcomma }}</span>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0; padding: 15px; display: flex; align-items: center; gap: 15px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(239, 68, 68, 0.1); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                <i class="fa-solid fa-arrow-up"></i>
+            </div>
+            <div>
+                <span style="display: block; font-size: 0.75rem; color: var(--text-sub); text-transform: uppercase; font-weight: 600;">Expenses</span>
+                <span style="font-size: 1.1rem; font-weight: 700; color: #ef4444;">{{ user.currency }}{{ total_expenses|floatformat:2|intcomma }}</span>
+            </div>
+        </div>
+    </div>
+
     <!-- FILTERS -->
     <div class="card" style="margin-bottom: 20px;">
         <form method="GET" action="."
             style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
-            <input type="text" name="search" placeholder="Search description..." value="{{ search }}"
-                style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+            <input type="text" name="search" placeholder="Search..." value="{{ search }}"
+                style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-alt); color: var(--text-main);">
 
             <!-- Category Filter -->
             <select name="category" onchange="this.form.submit()"
-                style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-alt); color: var(--text-main);">
                 <option value="all" {% if category == 'all' %}selected{% endif %}>All Categories</option>
-                <option value="needs" {% if category == 'needs' %}selected{% endif %}>Needs (50%)</option>
-                <option value="wants" {% if category == 'wants' %}selected{% endif %}>Wants (30%)</option>
-                <option value="savings" {% if category == 'savings' %}selected{% endif %}>Savings (20%)</option>
+                <option value="needs" {% if category == 'needs' %}selected{% endif %}>Needs ({{ user.rule_needs }}%)</option>
+                <option value="wants" {% if category == 'wants' %}selected{% endif %}>Wants ({{ user.rule_wants }}%)</option>
+                <option value="savings" {% if category == 'savings' %}selected{% endif %}>Savings ({{ user.rule_savings }}%)</option>
                 <option value="income" {% if category == 'income' %}selected{% endif %}>Income</option>
             </select>
 
             <select name="sort" onchange="this.form.submit()"
-                style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-alt); color: var(--text-main);">
                 <option value="date" {% if request.GET.sort == 'date' %}selected{% endif %}>Sort: Date (Latest)</option>
                 <option value="amount_high" {% if request.GET.sort == 'amount_high' %}selected{% endif %}>Amount (High to
                     Low)</option>
@@ -58,36 +82,66 @@
     </div>
 
     <!-- LIST -->
-    <ul class="tx-list">
-        {% for tx in transactions %}
-        <li class="tx-item" style="animation: slideUp 0.3s ease forwards; opacity: 1; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <div class="tx-icon-box"
-                    style="width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--bg-main); color: var(--cat-{{ tx.category }});">
-                    {% if tx.category == 'income' %}<i class="fa-solid fa-arrow-down"></i>
-                    {% elif tx.category == 'savings' %}<i class="fa-solid fa-piggy-bank"></i>
-                    {% elif tx.category == 'wants' %}<i class="fa-solid fa-bag-shopping"></i>
-                    {% else %}<i class="fa-solid fa-house"></i>{% endif %}
-                </div>
-                <div>
-                    <div class="tx-title" style="font-weight: 500;">{{ tx.description }}</div>
-                    <div class="tx-date" style="font-size: 0.8rem; color: var(--text-sub);">
-                        {{ tx.date|date:"M j, Y" }} • <span style="text-transform: capitalize;">{{ tx.category }}</span>
+    <!-- Grouped Transaction List -->
+    {% regroup transactions by date as date_list %}
+
+    <div class="tx-grouped-list">
+        {% for date_group in date_list %}
+        <div class="tx-date-header" style="margin: 20px 0 10px 0; font-size: 0.9rem; font-weight: 600; color: var(--text-sub); display: flex; align-items: center; gap: 8px;">
+            {{ date_group.grouper|date:"F j, Y" }}
+            {% if date_group.grouper == current_date %} <span style="background: var(--bg-alt); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; color: var(--text-main);">Today</span>{% endif %}
+        </div>
+        
+        <ul class="tx-list grouped" style="margin: 0; padding: 0; list-style: none;">
+            {% for tx in date_group.list %}
+            <li class="tx-item" style="display: flex; align-items: center; justify-content: space-between; padding: 16px; margin-bottom: 0; background: var(--bg-surface); border-bottom: 1px solid var(--border); border-left: 4px solid var(--cat-{{ tx.category|lower }});">
+                <div class="tx-left-group" style="display: flex; align-items: center; gap: 15px;">
+                    <div class="tx-icon-box" style="width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color:var(--cat-{{ tx.category|lower }}); background:rgba(0,0,0,0.03);">
+                        {% if tx.category == 'income' %}
+                        <i class="fa-solid fa-sack-dollar"></i>
+                        {% elif tx.category == 'needs' %}
+                        <i class="fa-solid fa-house"></i>
+                        {% elif tx.category == 'wants' %}
+                        <i class="fa-solid fa-bag-shopping"></i>
+                        {% elif tx.category == 'savings' %}
+                        <i class="fa-solid fa-piggy-bank"></i>
+                        {% endif %}
+                    </div>
+
+                    <div class="tx-details">
+                        <span class="tx-title" style="display: block; font-weight: 600; color:var(--cat-{{ tx.category|lower }}); font-size: 1rem;">{{ tx.description }}</span>
+                        <span class="tx-date" style="font-size: 0.8rem; color: var(--text-sub); text-transform: capitalize;">
+                            {{ tx.category }}
+                        </span>
                     </div>
                 </div>
-            </div>
-            <div class="tx-amount"
-                style="font-weight: 600; color: {% if tx.category == 'income' %}var(--success){% else %}var(--text-main){% endif %};">
-                {% if tx.category == 'income' %}+{% else %}-{% endif %}{{ user.currency }}{{ tx.amount|floatformat:2 }}
-            </div>
-        </li>
+
+                <div class="tx-right-group" style="text-align: right;">
+                    <span class="tx-amount" style="display: block; font-weight: 700; font-size: 1.05rem; color: {% if tx.category == 'income' %}var(--cat-income){% elif tx.category == 'savings' %}var(--cat-savings){% else %}var(--danger){% endif %};">
+                        {% if tx.category == 'income' %}+{% else %}-{% endif %}{{ user.currency }}{{ tx.amount|floatformat:2|intcomma }}
+                    </span>
+                    
+                    <div class="tx-actions" style="margin-top: 4px; display: inline-flex; gap: 8px;">
+                         <a href="#" onclick="editTx({{ tx.id }}, '{{ tx.description|escapejs }}', {{ tx.amount }}, '{{ tx.category }}')" style="color: var(--text-sub); font-size: 0.85rem;" title="Edit">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                         <a href="{% url 'delete_transaction' tx.id %}?year={{ tx.date.year }}&month={{ tx.date.month }}" 
+                            onclick="return confirm('Delete this transaction?')" 
+                            style="color: var(--danger); font-size: 0.85rem;" title="Delete">
+                            <i class="fa-solid fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
         {% empty %}
-        <li style="text-align: center; padding: 40px; color: var(--text-sub);">
-            <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+        <div class="empty-box" style="text-align: center; padding: 40px; color: var(--text-sub);">
+            <i class="fa-solid fa-receipt" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
             <p>No transactions found for this period.</p>
-        </li>
+        </div>
         {% endfor %}
-    </ul>
+    </div>
 
     <div style="text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--text-sub);">
         Showing all transactions for {{ current_date|date:"F Y" }}

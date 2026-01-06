@@ -4,11 +4,17 @@ from . import api_views
 
 urlpatterns = [
     # Authentication
+    # Authentication
     path('', views.login_view, name='login'),
+    path('check-user/', views.check_user, name='check_user'),
+    path('login-pin/', views.login_pin, name='login_pin'),
+    path('create-pin/', views.create_pin, name='create_pin'),
     path('send-otp/', views.send_otp, name='send_otp'),
     path('verify-otp/', views.verify_otp_view, name='verify_otp'),
     path('setup/', views.setup_view, name='setup'),
     path('logout/', views.logout_view, name='logout'),
+    path('privacy-policy/', views.privacy_policy_view, name='privacy_policy'),
+    path('delete-account/', views.delete_account_view, name='delete_account'),
     
     # Main views
     path('dashboard/', views.dashboard, name='dashboard'),

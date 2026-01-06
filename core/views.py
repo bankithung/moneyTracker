@@ -18,17 +18,137 @@ def login_view(request):
     """Phone number input page"""
     if request.session.get('user_id'):
         return redirect('dashboard')
+    if request.session.get('pending_phone'):
+        # If pending phone, clear it unless we're in middle of OTP flow? 
+        # Actually better to just render login, let user re-enter phone.
+        pass
     return render(request, 'core/login.html')
 
 
-def send_otp(request):
-    """Send OTP to phone number"""
+def check_user(request):
+    """Check if user exists and decide next step (PIN or Setup)"""
     if request.method == 'POST':
         phone = request.POST.get('phone', '').strip()
         
         if not phone or len(phone) < 10:
             messages.error(request, 'Please enter a valid phone number')
             return redirect('login')
+            
+        request.session['pending_phone'] = phone
+        
+        # Get or Create User immediately (Bypassing OTP for now)
+        user, created = User.objects.get_or_create(phone=phone)
+        
+        # Check if PIN is set and not default
+        if user.pin and user.pin != '000000':
+            return redirect('login_pin')
+        else:
+            # New user or no PIN -> Go straight to Setup/PIN creation
+            # We treat them as verified for now since OTP is disabled
+            request.session['user_id'] = user.id
+            return redirect('create_pin')
+            
+    return redirect('login')
+
+
+def login_pin(request):
+    """Login with PIN"""
+    phone = request.session.get('pending_phone')
+    if not phone:
+        return redirect('login')
+        
+    if request.method == 'POST':
+        pin = request.POST.get('pin', '').strip()
+        try:
+            user = User.objects.get(phone=phone)
+            if user.pin == pin:
+                request.session['user_id'] = user.id
+                # Don't delete pending_phone yet in case we need it elsewhere? 
+                # Actually we can delete it now.
+                del request.session['pending_phone']
+                messages.success(request, f'Welcome back, {user.name or "friend"}!')
+                return redirect('dashboard')
+            else:
+                messages.error(request, 'Invalid PIN')
+        except User.DoesNotExist:
+            return redirect('login')
+            
+    return render(request, 'core/login_pin.html', {'phone': phone})
+
+
+def create_pin(request):
+    """Create a new PIN after OTP verification"""
+    phone = request.session.get('pending_phone')
+    if not phone:
+        return redirect('login')
+        
+    # Ensure user is actually logged in or we have a verified session state from OTP?
+    # Security: In verify_otp_view we set user_id. So we should check user_id.
+    # BUT, the plan was: verify_otp redirects to create_pin.
+    # If verify_otp logs them in, then we can just use request.user equivalent.
+    
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('login')
+        
+    if request.method == 'POST':
+        pin = request.POST.get('pin', '').strip()
+        confirm_pin = request.POST.get('confirm_pin', '').strip()
+        name = request.POST.get('name', '').strip()
+        
+        if len(pin) != 6 or not pin.isdigit():
+            messages.error(request, 'PIN must be 6 digits')
+        elif pin != confirm_pin:
+            messages.error(request, 'PINs do not match')
+        else:
+            user = User.objects.get(id=user_id)
+            user.pin = pin
+            if name:
+                user.name = name
+            user.save()
+            messages.success(request, 'Setup completed successfully!')
+            
+            # If new user (income is 0), go to settings first
+            if user.income == 0:
+                 messages.info(request, 'Please set up your preferences.')
+                 return redirect('settings')
+                 
+            return redirect('dashboard')
+            
+    # Check if user has name
+    try:
+        user = User.objects.get(id=user_id)
+        has_name = bool(user.name)
+    except User.DoesNotExist:
+        return redirect('login')
+        
+    return render(request, 'core/create_pin.html', {'has_name': has_name})
+
+
+def send_otp(request):
+    """Send OTP to phone number"""
+    if request.method == 'POST':
+        # If coming from check_user, phone is already in session
+        # If coming from login (direct POST somehow?), get from POST
+        # But actually, check_user directs here for NEW users/NO PIN users.
+        # We need to handle generation.
+        
+        # If we are here, it means we need to send OTP.
+        # Phone might be in session (from check_user) or POST (legacy/fallback)
+        
+        phone = request.session.get('pending_phone')
+        if not phone:
+             # Try to get from POST if not in session (direct call)
+             phone = request.POST.get('phone', '').strip()
+        
+        if not phone or len(phone) < 10:
+            messages.error(request, 'Please enter a valid phone number')
+            return redirect('login')
+            
+        request.session['pending_phone'] = phone
+
+        # Check reset flag - if resetting, might want to ignore existing PIN check?
+        # But send_otp is usually called when we KNOW we want an OTP.
         
         # Generate OTP
         otp = OTP.generate_otp(phone)
@@ -41,10 +161,20 @@ def send_otp(request):
         print(f"📱 OTP for {phone}: {otp.code}")
         print(f"{'=' * 50}\n")
         
-        # Store phone in session for verification
-        request.session['pending_phone'] = phone
-        
         return redirect('verify_otp')
+    
+    # If GET, check if we should just send OTP for pending_phone?
+    # For now, if GET, we assume specific request to send OTP or just redirect
+    phone = request.session.get('pending_phone')
+    if phone:
+        # Re-send logic
+        otp = OTP.generate_otp(phone)
+        logger.info(f"Resent OTP for {phone}: {otp.code}")
+        print(f"📱 Resent OTP for {phone}: {otp.code}")
+        messages.info(request, 'OTP sent successfully')
+        return redirect('verify_otp')
+        
+    return redirect('login')
     
     return redirect('login')
 
@@ -70,14 +200,18 @@ def verify_otp_view(request):
                 
                 # Store user in session
                 request.session['user_id'] = user.id
-                del request.session['pending_phone']
+                # Keep pending_phone until PIN is set? No, user_id is enough now.
+                # But create_pin might want it? No, create_pin uses user_id.
                 
-                if created:
-                    # New user - redirect to setup page
-                    return redirect('setup')
+                if created or not user.pin or user.pin == '000000':
+                    # New user OR existing user without PIN -> Create PIN
+                    return redirect('create_pin')
                 else:
-                    messages.success(request, f'Welcome back, {user.name or "friend"}!')
-                    return redirect('dashboard')
+                    # Logic: If they did OTP but have a PIN? 
+                    # Could happen if they forgot PIN and did reset flow.
+                    # In that case, we should probably let them reset PIN?
+                    # Yes, redirect to create_pin to set new PIN.
+                    return redirect('create_pin')
             else:
                 messages.error(request, 'Invalid or expired OTP. Please try again.')
         except OTP.DoesNotExist:
@@ -92,6 +226,34 @@ def logout_view(request):
     request.session.flush()
     messages.success(request, 'Logged out successfully')
     return redirect('login')
+
+
+def privacy_policy_view(request):
+    """Privacy Policy page"""
+    return render(request, 'core/privacy_policy.html')
+
+
+def delete_account_view(request):
+    """Delete Account Request page"""
+    request_submitted = False
+    
+    if request.method == 'POST':
+        phone = request.POST.get('phone', '').strip()
+        reason = request.POST.get('reason', '').strip()
+        
+        if not phone or len(phone) < 10:
+            messages.error(request, 'Please enter a valid phone number')
+        else:
+            # Log the deletion request (in production, save to DB or send email)
+            logger.info(f"Account deletion request for {phone}. Reason: {reason}")
+            print(f"\n{'=' * 50}")
+            print(f"🗑️ ACCOUNT DELETION REQUEST")
+            print(f"Phone: {phone}")
+            print(f"Reason: {reason or 'Not provided'}")
+            print(f"{'=' * 50}\n")
+            request_submitted = True
+    
+    return render(request, 'core/delete_account.html', {'request_submitted': request_submitted})
 
 
 def get_user(request):
@@ -865,7 +1027,16 @@ def transactions_view(request):
     # Use helper date
     current_dt = date(year, month, 1)
     
-    txs = Transaction.objects.filter(user=user, date__year=year, date__month=month)
+    # Base Query for Summary (All Month Data)
+    month_txs = Transaction.objects.filter(user=user, date__year=year, date__month=month)
+    
+    # Calculate Summary Total (ignore filters)
+    extra_income = sum(t.amount for t in month_txs if t.category == 'income')
+    total_income = extra_income
+    total_expenses = sum(t.amount for t in month_txs if t.category != 'income')
+    
+    # Filtered Query for List
+    txs = month_txs
     
     if category != 'all':
         txs = txs.filter(category=category)
@@ -882,8 +1053,10 @@ def transactions_view(request):
         txs = txs.order_by('-amount')
     elif sort_by == 'amount_low':
         txs = txs.order_by('amount')
-        
+    
     context = {
+        'total_income': total_income,
+        'total_expenses': total_expenses,
         'user': user,
         'transactions': txs,
         'year': year,

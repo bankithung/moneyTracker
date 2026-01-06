@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Change this to your Django server's IP address
-const BASE_URL = 'https://1a492af93e56.ngrok-free.app';
+const BASE_URL = 'http://52.23.186.9';
 
 // Token keys in AsyncStorage
 const ACCESS_TOKEN_KEY = 'accessToken';

@@ -1,0 +1,340 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/png" href="{% static 'css/logo/logo.png' %}">
+    <title>Create PIN - Wealth Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #111827;
+            --primary-hover: #000000;
+            --accent: #10b981;
+            --text-main: #111827;
+            --text-sub: #6b7280;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            width: 100%;
+            max-width: 440px;
+            padding: 40px 32px;
+            border-radius: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            text-align: center;
+        }
+
+        .logo-icon {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: var(--text-sub);
+            margin-bottom: 32px;
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        /* Standard text input (for Name) */
+        .text-input-box {
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            padding: 8px 16px;
+            text-align: left;
+            transition: all 0.2s;
+        }
+
+        .text-input-box:focus-within {
+             border-color: var(--accent);
+             box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+        }
+
+        .text-input-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+            display: block;
+        }
+
+        .text-input {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-main);
+            padding: 4px 0;
+        }
+
+
+        /* PIN Inputs */
+        .pin-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .pin-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .pin-digit {
+            width: 44px;
+            height: 52px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+            color: var(--text-main);
+            background: #f9fafb;
+            transition: all 0.2s;
+        }
+
+        .pin-digit:focus {
+            border-color: var(--accent);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+            outline: none;
+            transform: translateY(-2px);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .progress-dots {
+             display: flex;
+             justify-content: center;
+             gap: 8px;
+             margin-bottom: 24px;
+        }
+        
+        .dot { 
+            width: 8px; height: 8px; 
+            border-radius: 50%; 
+            background: #e5e7eb; 
+        }
+        .dot.active { 
+            background: var(--accent); 
+            width: 20px; 
+            border-radius: 4px; 
+        }
+
+        /* Toast Messages */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            width: 90%;
+            max-width: 360px;
+        }
+
+        .toast {
+            background: rgba(30, 30, 30, 0.95);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 50px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .toast i { font-size: 16px; }
+        .toast-success i { color: #4ade80; }
+        .toast-error i { color: #f87171; }
+        
+        @media (max-width: 480px) {
+            .pin-digit {
+                width: 38px;
+                height: 48px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    {% if messages %}
+    <div class="toast-container">
+        {% for message in messages %}
+        <div class="toast toast-{{ message.tags }}">
+            <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="login-card">
+        <div class="progress-dots">
+            <div class="dot"></div>
+            <div class="dot active"></div>
+            <div class="dot"></div>
+        </div>
+        
+        <div class="logo-icon">
+            <img src="{% static 'css/logo/logo.png' %}" alt="Logo" style="width: 120px; height: 120px; object-fit: contain;">
+        </div>
+        <h1>Secure Setup</h1>
+        <p class="subtitle">Create a 6-digit PIN to protect your account.</p>
+
+        <form method="POST" action="{% url 'create_pin' %}">
+            {% csrf_token %}
+            
+            {% if not has_name %}
+            <div class="input-group">
+                <div class="text-input-box">
+                    <label class="text-input-label">Your Full Name</label>
+                    <input type="text" name="name" class="text-input" placeholder="e.g. John Doe" required>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="input-group">
+                <label class="pin-label">Create PIN</label>
+                <div class="pin-container">
+                    <input type="password" class="pin-digit pin-create" maxlength="1" data-index="0" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="password" class="pin-digit pin-create" maxlength="1" data-index="1" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="password" class="pin-digit pin-create" maxlength="1" data-index="2" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="password" class="pin-digit pin-create" maxlength="1" data-index="3" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="password" class="pin-digit pin-create" maxlength="1" data-index="4" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="password" class="pin-digit pin-create" maxlength="1" data-index="5" inputmode="numeric" pattern="[0-9]" required>
+                </div>
+                <input type="hidden" name="pin" id="combined-pin">
+            </div>
+            
+            <div class="input-group">
+                <label class="pin-label">Confirm PIN</label>
+                <div class="pin-container">
+                    <input type="password" class="pin-digit pin-confirm" maxlength="1" data-index="0" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="password" class="pin-digit pin-confirm" maxlength="1" data-index="1" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="password" class="pin-digit pin-confirm" maxlength="1" data-index="2" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="password" class="pin-digit pin-confirm" maxlength="1" data-index="3" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="password" class="pin-digit pin-confirm" maxlength="1" data-index="4" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="password" class="pin-digit pin-confirm" maxlength="1" data-index="5" inputmode="numeric" pattern="[0-9]" required>
+                </div>
+                <input type="hidden" name="confirm_pin" id="combined-confirm-pin">
+            </div>
+            
+            <button type="submit" class="submit-btn">
+                Complete Setup <i class="fa-solid fa-check"></i>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        function setupPinInputs(selector, hiddenInputId) {
+            const pinInputs = document.querySelectorAll(selector);
+            const combinedPin = document.getElementById(hiddenInputId);
+            
+            pinInputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    const value = e.target.value;
+                    if (value.length === 1 && index < pinInputs.length - 1) {
+                        pinInputs[index + 1].focus();
+                    }
+                    updateCombinedPin();
+                });
+                
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                        pinInputs[index - 1].focus();
+                    }
+                });
+                
+                input.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    // Basic paste support
+                    const term = e.clipboardData.getData('text').slice(0, 6);
+                    if(term && term.match(/^\d+$/)) {
+                       term.split('').forEach((num, i) => {
+                           if(pinInputs[i]) pinInputs[i].value = num;
+                       });
+                       updateCombinedPin();
+                    }
+                });
+            });
+            
+            function updateCombinedPin() {
+                combinedPin.value = Array.from(pinInputs).map(input => input.value).join('');
+            }
+        }
+        
+        setupPinInputs('.pin-create', 'combined-pin');
+        setupPinInputs('.pin-confirm', 'combined-confirm-pin');
+    </script>
+</body>
+</html>

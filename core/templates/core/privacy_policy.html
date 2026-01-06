@@ -1,0 +1,249 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/png" href="{% static 'css/logo/logo.png' %}">
+    <title>Privacy Policy - Wealth Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #0f172a;      /* Rich Dark Slate */
+            --accent: #10b981;       /* Emerald */
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --bg-light: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg-light);
+            color: var(--text-main);
+            line-height: 1.7;
+        }
+
+        .header-section {
+            background: var(--primary);
+            color: white;
+            padding: 80px 20px 100px;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Abstract Pattern for consistency */
+        .header-section::before {
+             content: '';
+             position: absolute;
+             top: 0; left: 0; right: 0; bottom: 0;
+             background-image: 
+                 radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 20%),
+                 radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 20%);
+        }
+
+        .back-link {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+            z-index: 10;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 5;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header-content h1 {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+        
+        .header-content p {
+            font-size: 18px;
+            color: #94a3b8;
+        }
+
+        .policy-container {
+            max-width: 800px;
+            margin: -60px auto 60px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .policy-card {
+            background: white;
+            border-radius: 20px;
+            padding: 60px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section h2 i {
+            color: var(--accent);
+            font-size: 18px;
+            background: rgba(16, 185, 129, 0.1);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .section p {
+            color: var(--text-sub);
+            margin-bottom: 16px;
+            font-size: 15px;
+        }
+
+        .section ul {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            gap: 12px;
+        }
+
+        .section li {
+            position: relative;
+            padding-left: 24px;
+            color: var(--text-sub);
+            font-size: 15px;
+        }
+
+        .section li::before {
+            content: '•';
+            color: var(--accent);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        a.text-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px dashed var(--accent);
+        }
+
+        .footer-note {
+            margin-top: 60px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+            color: #94a3b8;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .header-section { padding: 80px 20px; }
+            .header-content h1 { font-size: 32px; }
+            .policy-card { padding: 32px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header-section">
+        <a href="{% url 'login' %}" class="back-link">
+            <i class="fa-solid fa-arrow-left"></i> Back to Login
+        </a>
+        <div class="header-content">
+            <h1>Privacy Policy</h1>
+            <p>Your trust is our top priority.</p>
+        </div>
+    </header>
+
+    <div class="policy-container">
+        <div class="policy-card">
+            <div class="section">
+                <h2><i class="fa-solid fa-shield-halved"></i> 1. Introduction</h2>
+                <p>Welcome to Wealth Planner. We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and web service.</p>
+            </div>
+
+            <div class="section">
+                <h2><i class="fa-solid fa-database"></i> 2. Information We Collect</h2>
+                <p>We collect information that you provide directly to us to improve your financial planning experience:</p>
+                <ul>
+                    <li><strong>Account Information:</strong> Phone number, name, and security PIN for authentication.</li>
+                    <li><strong>Financial Data:</strong> Income details, transaction records, savings goals, and budget preferences.</li>
+                    <li><strong>Usage Data:</strong> App usage patterns to improve service quality.</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2><i class="fa-solid fa-bolt"></i> 3. How We Use Your Data</h2>
+                <p>We use the collected information solely for:</p>
+                <ul>
+                    <li>Providing and maintaining our service</li>
+                    <li>Generating personalized financial insights</li>
+                    <li>Improving our application and user experience</li>
+                    <li>Ensuring the security of your account</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2><i class="fa-solid fa-lock"></i> 4. Data Security</h2>
+                <p>We implement bank-grade security measures to protect your data:</p>
+                <ul>
+                    <li>End-to-end encryption for data transmission</li>
+                    <li>Secure PIN-based authentication</li>
+                    <li>Regular security audits and updates</li>
+                    <li>Data stored on secure, encrypted servers</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2><i class="fa-solid fa-user-slash"></i> 5. Data Deletion</h2>
+                <p>You have full control over your data. You have the right to request deletion of your account and all associated data at any time. To request account deletion, please visit our <a href="{% url 'delete_account' %}" class="text-link">Account Deletion Request</a> page.</p>
+            </div>
+
+            <div class="section">
+                <h2><i class="fa-solid fa-envelope"></i> 6. Contact Us</h2>
+                <p>If you have any questions about this Privacy Policy, please contact us at <strong>privacy@wealthplanner.app</strong>.</p>
+            </div>
+
+            <div class="footer-note">
+                Last updated: January 2026
+            </div>
+        </div>
+    </div>
+</body>
+</html>

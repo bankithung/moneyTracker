@@ -5,9 +5,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/png" href="{% static 'css/logo/logo.png' %}">
     <title>Verify OTP - Wealth Planner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        :root {
+            --primary: #111827;      /* Black/Dark Slate */
+            --primary-hover: #000000;
+            --accent: #10b981;       /* Emerald */
+            --text-main: #111827;
+            --text-sub: #6b7280;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            width: 100%;
+            max-width: 400px;
+            padding: 40px 32px;
+            border-radius: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            text-align: center;
+        }
+
+        .logo-icon {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: var(--text-sub);
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        /* PIN/OTP Digit Inputs */
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        .pin-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: block;
+            text-align: left;
+        }
+
+        .pin-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .pin-digit {
+            width: 48px;
+            height: 56px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            color: var(--text-main);
+            background: #f9fafb;
+            transition: all 0.2s;
+        }
+
+        .pin-digit:focus {
+            border-color: var(--accent);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+            outline: none;
+            transform: translateY(-2px);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .submit-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .resend-link {
+            display: block;
+            margin-top: 24px;
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .resend-link:hover {
+            color: var(--accent);
+        }
+
+        /* Toast Messages */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            width: 90%;
+            max-width: 360px;
+        }
+
+        .toast {
+            background: rgba(17, 24, 39, 0.95);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 50px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .toast i { font-size: 16px; }
+        .toast-success i { color: #4ade80; }
+        .toast-error i { color: #f87171; }
+
+        @media (max-width: 380px) {
+            .pin-digit {
+                width: 40px;
+                height: 48px;
+                font-size: 20px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -15,44 +189,88 @@
     <div class="toast-container">
         {% for message in messages %}
         <div class="toast toast-{{ message.tags }}">
-            <i
-                class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
-            <span class="toast-content">{{ message }}</span>
-            <i class="fa-solid fa-xmark toast-close" onclick="this.parentElement.remove()"></i>
+            <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+            <span>{{ message }}</span>
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
-    <div class="auth-layout">
-        <div class="auth-box">
-            <div class="auth-icon">
-                <i class="fa-solid fa-lock"></i>
-            </div>
-            <h1 class="auth-title">Verify Access</h1>
-            <p class="auth-sub">Enter the code sent to <b>{{ phone }}</b></p>
-
-            <form method="POST">
-                {% csrf_token %}
-                <div class="form-group" style="text-align:center;">
-                    <label for="otp" style="display:block; margin-bottom:10px;">One-Time Password</label>
-                    <div style="position:relative; max-width:200px; margin:0 auto;">
-                        <input type="text" id="otp" name="otp" placeholder="• • • • • •" required maxlength="6"
-                            style="text-align:center; letter-spacing:8px; font-weight:800; font-size:1.5rem; padding:10px;">
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width:100%; padding:12px;">
-                    Verify <i class="fa-solid fa-check"></i>
-                </button>
-            </form>
-
-            <div style="margin-top:20px;">
-                <a href="{% url 'login' %}" style="font-size:0.9rem; color:var(--text-sub);">
-                    <i class="fa-solid fa-arrow-left"></i> Change Number
-                </a>
-            </div>
+    <div class="login-card">
+        <div class="logo-icon">
+            <img src="{% static 'css/logo/logo.png' %}" alt="Logo" style="width: 120px; height: 120px; object-fit: contain;">
         </div>
-    </div>
-</body>
+        <h1>Verification</h1>
+        <p class="subtitle">Enter the 6-digit code sent to<br><b>{{ phone }}</b></p>
 
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="input-group">
+                <div class="pin-container">
+                    <!-- Using same logic as PIN inputs but for OTP -->
+                    <input type="text" class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="text" class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="text" class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="text" class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="text" class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" required>
+                    <input type="text" class="pin-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" required>
+                </div>
+                <!-- Hidden input that actually gets submitted -->
+                <input type="hidden" name="otp" id="combined-otp">
+            </div>
+
+            <button type="submit" class="submit-btn">
+                Verify Code <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <a href="{% url 'login' %}" class="resend-link">
+            <i class="fa-solid fa-arrow-left"></i> Change Phone Number
+        </a>
+    </div>
+
+    <script>
+        const pinInputs = document.querySelectorAll('.pin-digit');
+        const combinedOtp = document.getElementById('combined-otp');
+        
+        pinInputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value.length === 1 && index < pinInputs.length - 1) {
+                    pinInputs[index + 1].focus();
+                }
+                updateCombinedOtp();
+            });
+            
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    pinInputs[index - 1].focus();
+                }
+            });
+
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pastedData = e.clipboardData.getData('text').slice(0, 6);
+                if(/^\d+$/.test(pastedData)) {
+                    pastedData.split('').forEach((char, i) => {
+                        if (pinInputs[i]) {
+                            pinInputs[i].value = char;
+                        }
+                    });
+                    updateCombinedOtp();
+                }
+            });
+        });
+        
+        // Auto-focus first input
+        window.addEventListener('load', () => {
+            if(pinInputs.length > 0) pinInputs[0].focus();
+        });
+        
+        function updateCombinedOtp() {
+            combinedOtp.value = Array.from(pinInputs).map(input => input.value).join('');
+        }
+    </script>
+</body>
 </html>

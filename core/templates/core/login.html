@@ -1,58 +1,434 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" type="image/png" href="{% static 'css/logo/logo.png' %}">
     <title>Login - Wealth Planner</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
+    
+    <style>
+        :root {
+            --bg-dark: #0f172a;      /* Rich Dark Slate */
+            --bg-light: #f8fafc;     /* Softest Slate for Right Panel */
+            --accent: #10b981;       /* Emerald */
+            --text-dark: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+        }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            background: var(--bg-light);
+            overflow: hidden;
+        }
+
+        /* --- LEFT PANEL: Info (65%) --- */
+        .info-section {
+            width: 65%;
+            background: var(--bg-dark);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 80px 100px;
+            z-index: 1;
+        }
+
+        /* Abstract Pattern */
+        .info-section::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 20%);
+            z-index: -2;
+        }
+
+        /* Wavy Border Container */
+        .wave-separator {
+            position: absolute;
+            top: 0;
+            right: -1px;
+            bottom: 0;
+            width: 150px;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* SVG styling */
+        .wave-separator svg {
+            width: 100%;
+            height: 100%;
+            fill: var(--bg-light); 
+        }
+
+        .info-content {
+            max-width: 600px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 100px;
+            color: var(--accent);
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 32px;
+        }
+
+        .headline {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--text-dark);
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -1px;
+        }
+        
+        .headline span {
+            color: var(--accent);
+        }
+
+        .subheadline {
+            font-size: 18px;
+            color: #94a3b8;
+            line-height: 1.6;
+            margin-bottom: 56px;
+            max-width: 480px;
+        }
+
+        .feature-list {
+            display: grid;
+            gap: 24px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .feature-icon-box {
+            width: 40px;
+            height: 40px;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 18px;
+        }
+
+        .feature-text h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .feature-text p {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.4;
+        }
+
+        /* --- RIGHT PANEL: Login (35%) --- */
+        .login-section {
+            width: 35%;
+            background: var(--bg-light); /* Soft background */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .brand-header {
+            margin-bottom: 40px;
+        }
+
+        .login-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .login-header p {
+            font-size: 14px;
+            color: var(--text-sub);
+            margin-bottom: 32px;
+        }
+
+        .minimal-input-container {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 16px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Slight lift */
+        }
+
+        .minimal-input-container:focus-within {
+            border-color: var(--text-main);
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .input-label-sm {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .phone-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .country-prefix {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            padding-right: 12px;
+            border-right: 1px solid var(--border);
+        }
+
+        .phone-input {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 17px;
+            font-weight: 500;
+            color: var(--text-main);
+            background: transparent;
+        }
+
+        .phone-input::placeholder {
+            color: #cbd5e1;
+        }
+
+        .btn-continue {
+            width: 100%;
+            background: var(--text-main);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .btn-continue:hover {
+            background: #000;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .security-note {
+            margin-top: 32px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-sub);
+            justify-content: center;
+        }
+
+        .login-footer-links {
+            margin-top: 24px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 13px;
+        }
+
+        .login-footer-links a {
+            color: var(--text-sub);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .login-footer-links a:hover {
+            color: var(--text-main);
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .info-section { display: none; }
+            .login-section { width: 100%; padding: 24px; }
+        }
+
+         .toast-container { position: absolute; top: 20px; right: 20px; z-index: 100; }
+         .toast { background: var(--text-main); color: white; padding: 12px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 8px; }
+    </style>
+</head>
 <body>
     {% if messages %}
     <div class="toast-container">
         {% for message in messages %}
-        <div class="toast toast-{{ message.tags }}">
-            <i
-                class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
-            <span class="toast-content">{{ message }}</span>
-            <i class="fa-solid fa-xmark toast-close" onclick="this.parentElement.remove()"></i>
+        <div class="toast">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>{{ message }}</span>
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
-    <div class="auth-layout">
-        <div class="auth-box">
-            <div class="auth-icon">
-                <i class="fa-solid fa-wallet"></i>
-            </div>
-            <h1 class="auth-title">Wealth Planner</h1>
-            <p class="auth-sub">Smart financial tracking for everyone.</p>
+    <!-- LEFT: Engaging Content -->
+    <section class="info-section">
+        <!-- Wavy Separator (SVG) -->
+        <div class="wave-separator">
+            <svg preserveAspectRatio="none" viewBox="0 0 100 800" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 0 C 50 300 50 500 0 800 L 100 800 L 100 0 Z"/>
+            </svg>
+        </div>
+        <!-- Note: SVG Path Explanation
+             M0 0: Start top left relative to wave box
+             C 50 300 50 500 0 800: Curve towards right (50) and back to left (0) at bottom
+             L 100 800: Line to bottom right
+             L 100 0: Line to top right
+             Z: Close
+             Actually, to make the "Right" section invade the "Left", the shape needs to be distinct.
+             Let's try a simpler curve:
+             <path d="M100 0 v800 H0 c50-200 50-600 0-800 H100z" /> inverted?
+             Let's maintain the fill as var(--bg-light) which is the RIGHT panel color.
+             So we want the RIGHT panel color to bulge into the LEFT panel or WAVE.
+             Let's use a standard wave SVG.
+        -->
+        <div class="wave-separator">
+             <svg viewBox="0 0 320 1080" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M320,0H0c0,0,100,200,80,540s-80,540-80,540h320V0z" fill="#f8fafc"></path>
+             </svg>
+        </div>
 
-            <form method="POST" action="{% url 'send_otp' %}">
-                {% csrf_token %}
-                <div class="form-group" style="text-align:left;">
-                    <label for="phone">Phone Number</label>
-                    <div style="position:relative;">
-                        <input type="tel" id="phone" name="phone" placeholder="e.g. 9876543210" required
-                            style="padding-left:44px;">
-                        <i class="fa-solid fa-phone"
-                            style="position:absolute; left:14px; top:14px; color:var(--text-sub);"></i>
+        <div class="info-content">
+            <div class="badge">
+                <i class="fa-solid fa-shield-halved"></i> Bank-grade Security
+            </div>
+            
+            <h2 class="headline">
+                Your wealth,<br><span>optimized.</span>
+            </h2>
+            <p class="subheadline">
+                Experience the next generation of financial tracking. Secure, intuitive, and designed for growth.
+            </p>
+
+            <div class="feature-list">
+                <div class="feature-item">
+                    <div class="feature-icon-box"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="feature-text">
+                        <h3>Deep Analytics</h3>
+                        <p>Understand your cash flow with precision.</p>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary" style="width:100%; padding:12px;">
-                    Send Secure Code <i class="fa-solid fa-arrow-right"></i>
+                <div class="feature-item">
+                    <div class="feature-icon-box"><i class="fa-solid fa-layer-group"></i></div>
+                    <div class="feature-text">
+                        <h3>Asset Management</h3>
+                        <p>Track stocks, real estate, and crypto in one place.</p>
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon-box"><i class="fa-solid fa-lock"></i></div>
+                    <div class="feature-text">
+                        <h3>Privacy First</h3>
+                        <p>Your financial data belongs to you, and only you.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RIGHT: Login Form -->
+    <section class="login-section">
+        <div class="login-wrapper">
+            <div class="brand-header">
+                <img src="{% static 'css/logo/logo.png' %}" alt="Wealth Planner" style="height: 80px; width: auto; object-fit: contain;">
+            </div>
+
+            <div class="login-header">
+                <h1>Welcome back</h1>
+                <p>Please enter your mobile number to sign in.</p>
+            </div>
+
+            <form method="POST" action="{% url 'check_user' %}">
+                {% csrf_token %}
+                
+                <div class="minimal-input-container">
+                    <label class="input-label-sm">Mobile Number</label>
+                    <div class="phone-row">
+                        <div class="country-prefix">
+                            <img src="https://flagcdn.com/w20/in.png" alt="India" style="width: 20px; border-radius: 2px;">
+                            <span>+91</span>
+                        </div>
+                        <input type="tel" name="phone" class="phone-input" placeholder="00000 00000" maxlength="10" pattern="[0-9]{10}" required autocomplete="tel">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-continue">
+                    Continue <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </form>
+            
+            <div class="security-note">
+                <i class="fa-solid fa-check-circle" style="color: #10b981;"></i> Secured by 256-bit AES encryption
+            </div>
 
-            <p style="margin-top:24px; font-size:0.85rem; color:var(--text-disable);">
-                <i class="fa-solid fa-shield-halved"></i> Secure & Private
-            </p>
+            <div class="login-footer-links">
+                <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+                <a href="{% url 'delete_account' %}">Data Safety</a>
+            </div>
         </div>
-    </div>
+    </section>
 </body>
-
 </html>

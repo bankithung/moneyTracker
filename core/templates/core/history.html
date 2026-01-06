@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}History - Wealth Planner{% endblock %}
 
@@ -56,10 +57,10 @@
                 {% for item in history %}
                 <tr>
                     <td><strong>{{ item.month }}</strong></td>
-                    <td>{{ user.currency }}{{ item.total_income|floatformat:2 }}</td>
-                    <td>{{ user.currency }}{{ item.spent|floatformat:2 }}</td>
+                    <td>{{ user.currency }}{{ item.total_income|floatformat:2|intcomma }}</td>
+                    <td>{{ user.currency }}{{ item.spent|floatformat:2|intcomma }}</td>
                     <td style="color:{% if item.saved >= 0 %}var(--success){% else %}var(--danger){% endif %};">
-                        {{ user.currency }}{{ item.saved|floatformat:2 }}
+                        {{ user.currency }}{{ item.saved|floatformat:2|intcomma }}
                     </td>
                     <td>
                         <span class="status-badge {% if item.status == 'Saved' %}saved{% else %}over{% endif %}">
