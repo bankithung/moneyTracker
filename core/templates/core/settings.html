@@ -4,90 +4,183 @@
 {% block title %}Settings - Wealth Planner{% endblock %}
 
 {% block content %}
-<header class="header">
-    <div class="brand">
-        <span class="brand-icon"></span>
-        Wealth Planner
-    </div>
-    <div class="header-controls">
-        <a href="{% url 'toggle_theme' %}" class="btn btn-outline btn-icon"></a>
-        <a href="{% url 'dashboard' %}" class="btn btn-outline"> Dashboard</a>
-        <a href="{% url 'logout' %}" class="btn btn-outline">Logout</a>
-    </div>
-</header>
+<div class="container" style="max-width: 800px; padding-bottom: 80px;">
+    
+    <!-- HEADER -->
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline"
+                style="border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border); background: var(--bg-alt);">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h1 style="margin: 0; font-size: 1.5rem; color: var(--text-main);">Settings</h1>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="document.forms[0].submit()">
+            <i class="fa-solid fa-check"></i> Save
+        </button>
+    </header>
 
-<div class="card">
-    <h2> Settings</h2>
     <form method="POST">
         {% csrf_token %}
-        
-        <div class="settings-section">
-            <div class="section-title"> Monthly Income</div>
-            <div class="form-group">
-                <label for="income">Fixed Standard Monthly Income</label>
-                <input type="number" id="income" name="income" value="{{ user.income }}" step="0.01" min="0" placeholder="0.00">
-            </div>
-        </div>
 
-        <div class="settings-section">
-            <div class="section-title"> Currency</div>
-            <div class="form-group">
-                <label for="currency">Currency Symbol</label>
-                <select id="currency" name="currency">
-                    {% for code, name in currencies %}
-                    <option value="{{ code }}" {% if user.currency == code %}selected{% endif %}>{{ name }}</option>
-                    {% endfor %}
-                </select>
+        <!-- FINANCIAL PROFILE -->
+        <div class="card" style="padding: 24px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; color:var(--primary);">
+                <i class="fa-solid fa-wallet" style="font-size:1.2rem;"></i>
+                <h3 style="margin:0; font-size:1.1rem; color:var(--text-main);">Financial Profile</h3>
             </div>
-        </div>
 
-        <div class="settings-section">
-            <div class="section-title"> Budget Rules (Must sum to 100%)</div>
-            <div class="rule-grid">
-                <div class="rule-item">
-                    <label for="rule_needs">Needs %</label>
-                    <input type="number" id="rule_needs" name="rule_needs" value="{{ user.rule_needs }}" min="0" max="100" required>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <!-- Monthly Income -->
+                <div>
+                    <label for="income" style="display:block; font-size:0.9rem; font-weight:600; color:var(--text-sub); margin-bottom:8px;">Monthly Income</label>
+                    <div style="position:relative;">
+                        <input type="number" id="income" name="income" value="{{ user.income }}" step="0.01" min="0" placeholder="0.00"
+                            style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-alt); color:var(--text-main); font-weight:600; font-size:1rem;"
+                            oninput="updateCalcs()">
+                    </div>
                 </div>
-                <div class="rule-item">
-                    <label for="rule_wants">Wants %</label>
-                    <input type="number" id="rule_wants" name="rule_wants" value="{{ user.rule_wants }}" min="0" max="100" required>
-                </div>
-                <div class="rule-item">
-                    <label for="rule_savings">Savings %</label>
-                    <input type="number" id="rule_savings" name="rule_savings" value="{{ user.rule_savings }}" min="0" max="100" required>
+
+                <!-- Currency -->
+                <div>
+                    <label for="currency" style="display:block; font-size:0.9rem; font-weight:600; color:var(--text-sub); margin-bottom:8px;">Currency</label>
+                    <select id="currency" name="currency"
+                        style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-alt); color:var(--text-main); font-weight:600; font-size:1rem;">
+                        {% for code, name in currencies %}
+                        <option value="{{ code }}" {% if user.currency == code %}selected{% endif %}>{{ code }} - {{ name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
         </div>
 
-        <div class="settings-section">
-            <div class="section-title"> Theme</div>
-            <div class="form-group">
-                <label for="theme">Appearance</label>
-                <select id="theme" name="theme">
-                    <option value="light" {% if user.theme == "light" %}selected{% endif %}> Light Mode</option>
-                    <option value="dark" {% if user.theme == "dark" %}selected{% endif %}> Dark Mode</option>
-                </select>
+        <!-- BUDGET RULES -->
+        <div class="card" style="padding: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <div style="display:flex; align-items:center; gap:10px; color:var(--primary);">
+                    <i class="fa-solid fa-chart-pie" style="font-size:1.2rem;"></i>
+                    <h3 style="margin:0; font-size:1.1rem; color:var(--text-main);">Budget Rules</h3>
+                </div>
+                <span id="total-pct" style="font-size:0.85rem; font-weight:600; padding:4px 10px; border-radius:20px; background:var(--bg-alt);">Total: 100%</span>
+            </div>
+
+            <p style="font-size:0.9rem; color:var(--text-sub); margin-bottom:20px;">Allocations based on your monthly income.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <!-- Needs -->
+                <div style="background:var(--bg-alt); padding:16px; border-radius:12px; border:1px solid var(--border);">
+                    <label for="rule_needs" style="display:block; font-size:0.85rem; font-weight:700; color:var(--cat-needs); margin-bottom:10px; text-transform:uppercase;">Needs %</label>
+                    <input type="number" id="rule_needs" name="rule_needs" value="{{ user.rule_needs }}" min="0" max="100" required
+                        style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-surface); color:var(--text-main); font-weight:700; font-size:1.1rem; margin-bottom:8px;"
+                        oninput="updateCalcs()">
+                    <div id="calc-needs" style="font-size:0.9rem; color:var(--text-main); font-weight:600;">$0.00</div>
+                </div>
+
+                <!-- Wants -->
+                <div style="background:var(--bg-alt); padding:16px; border-radius:12px; border:1px solid var(--border);">
+                    <label for="rule_wants" style="display:block; font-size:0.85rem; font-weight:700; color:var(--cat-wants); margin-bottom:10px; text-transform:uppercase;">Wants %</label>
+                    <input type="number" id="rule_wants" name="rule_wants" value="{{ user.rule_wants }}" min="0" max="100" required
+                        style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-surface); color:var(--text-main); font-weight:700; font-size:1.1rem; margin-bottom:8px;"
+                        oninput="updateCalcs()">
+                    <div id="calc-wants" style="font-size:0.9rem; color:var(--text-main); font-weight:600;">$0.00</div>
+                </div>
+
+                <!-- Savings -->
+                <div style="background:var(--bg-alt); padding:16px; border-radius:12px; border:1px solid var(--border);">
+                    <label for="rule_savings" style="display:block; font-size:0.85rem; font-weight:700; color:var(--cat-savings); margin-bottom:10px; text-transform:uppercase;">Savings %</label>
+                    <input type="number" id="rule_savings" name="rule_savings" value="{{ user.rule_savings }}" min="0" max="100" required
+                        style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-surface); color:var(--text-main); font-weight:700; font-size:1.1rem; margin-bottom:8px;"
+                        oninput="updateCalcs()">
+                    <div id="calc-savings" style="font-size:0.9rem; color:var(--text-main); font-weight:600;">$0.00</div>
+                </div>
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width:100%;"> Save Changes</button>
+        <!-- APP SETTINGS -->
+        <div class="card" style="padding: 24px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px; color:var(--primary);">
+                <i class="fa-solid fa-sliders" style="font-size:1.2rem;"></i>
+                <h3 style="margin:0; font-size:1.1rem; color:var(--text-main);">App Settings</h3>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div>
+                    <label for="theme" style="display:block; font-size:0.9rem; font-weight:600; color:var(--text-sub); margin-bottom:8px;">Appearance</label>
+                    <select id="theme" name="theme"
+                        style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); background:var(--bg-alt); color:var(--text-main); font-weight:600; font-size:1rem;">
+                        <option value="light" {% if user.theme == "light" %}selected{% endif %}>Light Mode</option>
+                        <option value="dark" {% if user.theme == "dark" %}selected{% endif %}>Dark Mode</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
     </form>
-</div>
+    
+    <!-- ACCOUNT INFO & DANGER -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        <div class="card" style="padding:24px; margin:0;">
+            <h4 style="margin:0 0 15px 0; color:var(--text-main);">Account Info</h4>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:0.9rem; color:var(--text-sub);">
+                <div style="display:flex; justify-content:space-between;">
+                    <span>Phone:</span>
+                    <span style="color:var(--text-main); font-weight:600;">{{ user.phone }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span>Joined:</span>
+                    <span style="color:var(--text-main); font-weight:600;">{{ user.created_at|date:"M Y" }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                    <a href="{% url 'logout' %}" style="color:var(--danger); font-weight:600; text-decoration:none;">Logout</a>
+                </div>
+            </div>
+        </div>
 
-<div class="card">
-    <div class="danger-zone">
-        <h4> Danger Zone</h4>
-        <p>This will delete all your transactions and reset settings to defaults.</p>
-        <form method="POST" action="{% url 'reset_data' %}" onsubmit="return confirm('Are you sure? This will delete ALL your data!');">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger"> Reset Everything</button>
-        </form>
+        <div class="card" style="padding:24px; margin:0; border:1px solid var(--danger);">
+            <h4 style="margin:0 0 10px 0; color:var(--danger);">Danger Zone</h4>
+            <p style="font-size:0.85rem; color:var(--text-sub); margin-bottom:15px;">Reset all transactions and settings.</p>
+            <form method="POST" action="{% url 'reset_data' %}" onsubmit="return confirm('Are you sure? This will delete ALL your data!');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline" style="width:100%; color:var(--danger); border-color:var(--danger);">
+                    Reset Data
+                </button>
+            </form>
+        </div>
     </div>
+
 </div>
 
-<div class="card">
-    <h3> Account Info</h3>
-    <p><strong>Phone:</strong> {{ user.phone }}</p>
-    <p><strong>Member since:</strong> {{ user.created_at|date:"F d, Y" }}</p>
-</div>
+<script>
+    function updateCalcs() {
+        const income = parseFloat(document.getElementById('income').value) || 0;
+        const nPct = parseFloat(document.getElementById('rule_needs').value) || 0;
+        const wPct = parseFloat(document.getElementById('rule_wants').value) || 0;
+        const sPct = parseFloat(document.getElementById('rule_savings').value) || 0;
+        const currency = document.getElementById('currency').options[document.getElementById('currency').selectedIndex].text.split(' ')[0] || '$';
+
+        // Calculate Only values
+        const nVal = (income * nPct / 100).toFixed(2);
+        const wVal = (income * wPct / 100).toFixed(2);
+        const sVal = (income * sPct / 100).toFixed(2);
+
+        // Update Text
+        document.getElementById('calc-needs').innerText = currency + Number(nVal).toLocaleString();
+        document.getElementById('calc-wants').innerText = currency + Number(wVal).toLocaleString();
+        document.getElementById('calc-savings').innerText = currency + Number(sVal).toLocaleString();
+
+        // Update Total PCT Check
+        const total = nPct + wPct + sPct;
+        const badge = document.getElementById('total-pct');
+        badge.innerText = `Total: ${total}%`;
+        if(total !== 100) {
+            badge.style.background = 'rgba(239, 68, 68, 0.1)';
+            badge.style.color = '#ef4444';
+        } else {
+            badge.style.background = 'rgba(16, 185, 129, 0.1)';
+            badge.style.color = '#10b981';
+        }
+    }
+    // Init on load
+    document.addEventListener('DOMContentLoaded', updateCalcs);
+</script>
 {% endblock %}
