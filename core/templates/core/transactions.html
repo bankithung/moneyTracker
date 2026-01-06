@@ -1,0 +1,130 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; padding-bottom: 80px;">
+
+    <!-- HEADER -->
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline"
+                style="border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border); background: var(--bg-alt);">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h1 style="margin: 0; font-size: 1.5rem; color: var(--text-main);">All Transactions</h1>
+        </div>
+    </header>
+
+    <!-- FILTERS -->
+    <div class="card" style="margin-bottom: 20px;">
+        <form method="GET" action="."
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+            <input type="text" name="search" placeholder="Search description..." value="{{ search }}"
+                style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+
+            <!-- Category Filter -->
+            <select name="category" onchange="this.form.submit()"
+                style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                <option value="all" {% if category == 'all' %}selected{% endif %}>All Categories</option>
+                <option value="needs" {% if category == 'needs' %}selected{% endif %}>Needs (50%)</option>
+                <option value="wants" {% if category == 'wants' %}selected{% endif %}>Wants (30%)</option>
+                <option value="savings" {% if category == 'savings' %}selected{% endif %}>Savings (20%)</option>
+                <option value="income" {% if category == 'income' %}selected{% endif %}>Income</option>
+            </select>
+
+            <select name="sort" onchange="this.form.submit()"
+                style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-main); color: var(--text-main);">
+                <option value="date" {% if request.GET.sort == 'date' %}selected{% endif %}>Sort: Date (Latest)</option>
+                <option value="amount_high" {% if request.GET.sort == 'amount_high' %}selected{% endif %}>Amount (High to
+                    Low)</option>
+                <option value="amount_low" {% if request.GET.sort == 'amount_low' %}selected{% endif %}>Amount (Low to
+                    High)</option>
+            </select>
+        </form>
+
+        <!-- Quick Nav for Months -->
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 15px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <a href="?year={{ prev_month.year }}&month={{ prev_month.month }}&category={{ category }}&sort={{ request.GET.sort }}"
+                class="btn btn-outline btn-sm">
+                <i class="fa-solid fa-chevron-left"></i> Previous
+            </a>
+            <span style="font-weight: 700; color: var(--text-main);">{{ current_date|date:"F Y" }}</span>
+            <a href="?year={{ next_month.year }}&month={{ next_month.month }}&category={{ category }}&sort={{ request.GET.sort }}"
+                class="btn btn-outline btn-sm">
+                Next <i class="fa-solid fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- LIST -->
+    <ul class="tx-list">
+        {% for tx in transactions %}
+        <li class="tx-item" style="animation: slideUp 0.3s ease forwards; opacity: 1; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="tx-icon-box"
+                    style="width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--bg-main); color: var(--cat-{{ tx.category }});">
+                    {% if tx.category == 'income' %}<i class="fa-solid fa-arrow-down"></i>
+                    {% elif tx.category == 'savings' %}<i class="fa-solid fa-piggy-bank"></i>
+                    {% elif tx.category == 'wants' %}<i class="fa-solid fa-bag-shopping"></i>
+                    {% else %}<i class="fa-solid fa-house"></i>{% endif %}
+                </div>
+                <div>
+                    <div class="tx-title" style="font-weight: 500;">{{ tx.description }}</div>
+                    <div class="tx-date" style="font-size: 0.8rem; color: var(--text-sub);">
+                        {{ tx.date|date:"M j, Y" }} • <span style="text-transform: capitalize;">{{ tx.category }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="tx-amount"
+                style="font-weight: 600; color: {% if tx.category == 'income' %}var(--success){% else %}var(--text-main){% endif %};">
+                {% if tx.category == 'income' %}+{% else %}-{% endif %}{{ user.currency }}{{ tx.amount|floatformat:2 }}
+            </div>
+        </li>
+        {% empty %}
+        <li style="text-align: center; padding: 40px; color: var(--text-sub);">
+            <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+            <p>No transactions found for this period.</p>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div style="text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--text-sub);">
+        Showing all transactions for {{ current_date|date:"F Y" }}
+    </div>
+</div>
+
+<style>
+    @keyframes slideUp {
+        from {
+            transform: translateY(10px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .tx-item:nth-child(1) {
+        animation-delay: 0.05s;
+    }
+
+    .tx-item:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    .tx-item:nth-child(3) {
+        animation-delay: 0.15s;
+    }
+
+    .tx-item:nth-child(4) {
+        animation-delay: 0.2s;
+    }
+
+    .tx-item:nth-child(5) {
+        animation-delay: 0.25s;
+    }
+</style>
+{% endblock %}

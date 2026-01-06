@@ -1,0 +1,98 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Smart Advisor - Wealth Planner{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<header class="header">
+    <div class="brand">
+        <span class="brand-icon">🚀</span>
+        Wealth Planner
+    </div>
+    <div class="header-controls">
+        <a href="{% url 'toggle_theme' %}" class="btn btn-outline btn-icon" title="Toggle Theme">
+            🌗
+        </a>
+        <a href="{% url 'settings' %}" class="btn btn-outline">
+            ⚙️ Settings
+        </a>
+        <a href="{% url 'logout' %}" class="btn btn-outline">
+            Logout
+        </a>
+    </div>
+</header>
+
+<!-- Tab Navigation -->
+<nav class="tab-nav">
+    <a href="{% url 'dashboard' %}?year={{ current_date.year }}&month={{ current_date.month }}" class="tab-btn">
+        📊 Plan & Track
+    </a>
+    <a href="{% url 'history' %}" class="tab-btn">
+        📅 Full History
+    </a>
+    <a href="{% url 'advisor' %}?year={{ current_date.year }}&month={{ current_date.month }}" class="tab-btn active">
+        🤖 Smart Advisor
+    </a>
+</nav>
+
+<!-- Month Navigation -->
+<div class="month-nav">
+    <a href="{% url 'advisor' %}?year={{ prev_month.year }}&month={{ prev_month.month }}" class="nav-btn">
+        ‹
+    </a>
+    <div class="month-title">{{ current_date|date:"F Y" }}</div>
+    <a href="{% url 'advisor' %}?year={{ next_month.year }}&month={{ next_month.month }}" class="nav-btn">
+        ›
+    </a>
+</div>
+
+<!-- Advisor Analysis -->
+<div class="card">
+    <h3>🤖 Analysis for {{ current_date|date:"F Y" }}</h3>
+
+    {% if advice %}
+    {% for item in advice %}
+    <div class="advice-card {{ item.type }}">
+        <div class="advice-title">{{ item.title }}</div>
+        <div class="advice-text">{{ item.text }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="advice-card good">
+        <div class="advice-title">✅ Looking Good!</div>
+        <div class="advice-text">No issues detected for this month. Keep up the great work!</div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Tips Card -->
+<div class="card">
+    <h3>💡 Budget Tips</h3>
+    <div class="advice-card info">
+        <div class="advice-title">The {{ user.rule_needs }}/{{ user.rule_wants }}/{{ user.rule_savings }} Rule</div>
+        <div class="advice-text">
+            <ul style="margin-left:20px; margin-top:10px;">
+                <li><strong>{{ user.rule_needs }}% for Needs:</strong> Essential expenses like rent, utilities,
+                    groceries, and transportation.</li>
+                <li><strong>{{ user.rule_wants }}% for Wants:</strong> Non-essential spending like dining out,
+                    entertainment, and hobbies.</li>
+                <li><strong>{{ user.rule_savings }}% for Savings:</strong> Emergency fund, investments, and debt
+                    repayment.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="advice-card">
+        <div class="advice-title">📈 Saving Strategies</div>
+        <div class="advice-text">
+            <ul style="margin-left:20px; margin-top:10px;">
+                <li>Pay yourself first - set aside savings before spending.</li>
+                <li>Track every expense to identify unnecessary spending.</li>
+                <li>Review subscriptions monthly and cancel unused ones.</li>
+                <li>Set specific savings goals with deadlines.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

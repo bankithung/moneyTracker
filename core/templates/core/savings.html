@@ -1,0 +1,108 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+<style>
+*{box-sizing:border-box;}
+.sv-page{max-width:1140px;margin:0 auto;padding:24px 20px 100px;}
+.sv-nav{display:flex;align-items:center;gap:12px;margin-bottom:32px;}
+.sv-back{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--bg-surface);border:1px solid var(--border);color:var(--text-sub);text-decoration:none;transition:all .15s ease;}
+.sv-back:hover{background:var(--bg-alt);color:var(--text-main);transform:translateY(-1px);}
+.sv-nav-title{font-size:1.1rem;font-weight:600;color:var(--text-main);}
+.sv-hero{background:var(--bg-surface);border:1px solid var(--border);border-radius:20px;padding:32px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:24px;}
+.sv-hero-left{flex:1;min-width:280px;}
+.sv-hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,0.1);color:#059669;font-size:0.75rem;font-weight:600;padding:6px 12px;border-radius:20px;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.5px;}
+.sv-hero-amount{font-size:3rem;font-weight:800;color:var(--text-main);line-height:1.1;margin-bottom:8px;letter-spacing:-1px;}
+.sv-hero-label{font-size:0.95rem;color:var(--text-sub);margin-bottom:20px;}
+.sv-hero-progress{background:var(--bg-alt);height:8px;border-radius:4px;overflow:hidden;margin-bottom:10px;}
+.sv-hero-progress-fill{height:100%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:4px;transition:width .6s ease;}
+.sv-hero-progress-label{display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text-sub);}
+.sv-hero-right{display:flex;flex-direction:column;gap:8px;min-width:200px;}
+.sv-year-picker{display:flex;align-items:center;gap:4px;background:var(--bg-alt);padding:6px 8px;border-radius:12px;border:1px solid var(--border);}
+.sv-year-btn{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;color:var(--text-sub);cursor:pointer;transition:all .15s;text-decoration:none;}
+.sv-year-btn:hover{background:var(--bg-surface);color:var(--text-main);}
+.sv-year-btn.off{opacity:.3;pointer-events:none;}
+.sv-year-val{font-weight:700;font-size:1rem;padding:0 12px;color:var(--text-main);}
+.sv-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.sv-metric{background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;padding:20px;}
+.sv-metric-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:14px;}
+.sv-metric-icon.g{background:rgba(16,185,129,0.1);color:#10b981;}
+.sv-metric-icon.b{background:rgba(99,102,241,0.1);color:#6366f1;}
+.sv-metric-icon.y{background:rgba(245,158,11,0.1);color:#f59e0b;}
+.sv-metric-icon.p{background:rgba(139,92,246,0.1);color:#8b5cf6;}
+.sv-metric-label{font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-sub);margin-bottom:6px;}
+.sv-metric-value{font-size:1.4rem;font-weight:700;color:var(--text-main);}
+.sv-metric-sub{font-size:0.8rem;color:var(--text-sub);margin-top:4px;}
+.sv-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;}
+.sv-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;padding:24px;}
+.sv-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.sv-card-title{font-size:1rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:10px;}
+.sv-card-title i{color:var(--primary);font-size:0.95rem;}
+.sv-chart-wrap{position:relative;height:280px;}
+.sv-tx-list{list-style:none;padding:0;margin:0;}
+.sv-tx{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);}
+.sv-tx:last-child{border-bottom:none;}
+.sv-tx-left{display:flex;align-items:center;gap:14px;}
+.sv-tx-icon{width:42px;height:42px;border-radius:12px;background:rgba(16,185,129,0.08);color:#10b981;display:flex;align-items:center;justify-content:center;font-size:1rem;}
+.sv-tx-name{font-weight:500;color:var(--text-main);margin-bottom:2px;}
+.sv-tx-date{font-size:0.8rem;color:var(--text-sub);}
+.sv-tx-amt{font-weight:600;color:#10b981;font-size:0.95rem;}
+.sv-empty{text-align:center;padding:48px 20px;color:var(--text-sub);}
+.sv-empty i{font-size:2.5rem;opacity:.25;margin-bottom:16px;display:block;}
+.sv-empty p{margin:0;font-size:0.9rem;}
+@media(max-width:1024px){.sv-metrics{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:768px){.sv-grid{grid-template-columns:1fr;}.sv-hero{padding:24px;}.sv-hero-amount{font-size:2.2rem;}.sv-metrics{grid-template-columns:1fr 1fr;}}
+@media(max-width:480px){.sv-metrics{grid-template-columns:1fr;}.sv-hero-right{width:100%;}.sv-year-picker{justify-content:center;}}
+</style>
+<div class="sv-page">
+<nav class="sv-nav">
+<a href="{% url 'dashboard' %}" class="sv-back"><i class="fa-solid fa-arrow-left"></i></a>
+<span class="sv-nav-title">Savings Overview</span>
+</nav>
+<section class="sv-hero">
+<div class="sv-hero-left">
+<div class="sv-hero-badge"><i class="fa-solid fa-piggy-bank"></i> Total Savings {{ current_year }}</div>
+<div class="sv-hero-amount">{{ user.currency }}{{ total_saved_year|floatformat:0 }}</div>
+<div class="sv-hero-label">You have saved this much in {{ current_year }} so far</div>
+{% widthratio total_saved_year yearly_goal 100 as pct %}
+<div class="sv-hero-progress"><div class="sv-hero-progress-fill" style="width:{% if pct > 100 %}100{% else %}{{ pct }}{% endif %}%;"></div></div>
+<div class="sv-hero-progress-label"><span>{{ pct }}% of goal reached</span><span>Goal: {{ user.currency }}{{ yearly_goal|floatformat:0 }}</span></div>
+</div>
+<div class="sv-hero-right">
+<div class="sv-year-picker">
+<a href="?year={{ year_prev }}" class="sv-year-btn"><i class="fa-solid fa-chevron-left"></i></a>
+<span class="sv-year-val">{{ current_year }}</span>
+{% if year_next %}<a href="?year={{ year_next }}" class="sv-year-btn"><i class="fa-solid fa-chevron-right"></i></a>{% else %}<span class="sv-year-btn off"><i class="fa-solid fa-chevron-right"></i></span>{% endif %}
+</div>
+</div>
+</section>
+<section class="sv-metrics">
+<div class="sv-metric"><div class="sv-metric-icon b"><i class="fa-solid fa-chart-line"></i></div><div class="sv-metric-label">Projected EOY</div><div class="sv-metric-value">{{ user.currency }}{{ projected_year|floatformat:0 }}</div><div class="sv-metric-sub">Based on current pace</div></div>
+<div class="sv-metric"><div class="sv-metric-icon g"><i class="fa-solid fa-percent"></i></div><div class="sv-metric-label">Savings Rate</div><div class="sv-metric-value">{{ savings_rate|floatformat:1 }}%</div><div class="sv-metric-sub">Of total income</div></div>
+<div class="sv-metric"><div class="sv-metric-icon y"><i class="fa-solid fa-trophy"></i></div><div class="sv-metric-label">Best Month</div><div class="sv-metric-value">{{ best_month_name }}</div><div class="sv-metric-sub">{{ user.currency }}{{ best_month_val|floatformat:0 }} saved</div></div>
+<div class="sv-metric"><div class="sv-metric-icon p"><i class="fa-solid fa-vault"></i></div><div class="sv-metric-label">All-Time Total</div><div class="sv-metric-value">{{ user.currency }}{{ total_saved_all_time|floatformat:0 }}</div><div class="sv-metric-sub">Lifetime savings</div></div>
+</section>
+<section class="sv-grid">
+<div class="sv-card">
+<div class="sv-card-header"><span class="sv-card-title"><i class="fa-solid fa-chart-column"></i>Monthly Breakdown</span></div>
+<div class="sv-chart-wrap"><canvas id="savingsChart"></canvas></div>
+</div>
+<div class="sv-card">
+<div class="sv-card-header"><span class="sv-card-title"><i class="fa-solid fa-clock-rotate-left"></i>Recent Activity</span></div>
+<ul class="sv-tx-list">
+{% for tx in recent_savings %}
+<li class="sv-tx">
+<div class="sv-tx-left"><div class="sv-tx-icon"><i class="fa-solid fa-arrow-down"></i></div><div><div class="sv-tx-name">{{ tx.description }}</div><div class="sv-tx-date">{{ tx.date|date:"M j, Y" }}</div></div></div>
+<div class="sv-tx-amt">+{{ user.currency }}{{ tx.amount|floatformat:0 }}</div>
+</li>
+{% empty %}
+<li class="sv-empty"><i class="fa-solid fa-inbox"></i><p>No savings transactions yet.<br>Add your first savings entry!</p></li>
+{% endfor %}
+</ul>
+</div>
+</section>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',function(){const ctx=document.getElementById('savingsChart').getContext('2d');const labels={{ chart_labels|safe }};const data={{ chart_values|safe }};const goal=parseFloat('{{ monthly_goal }}');const gradient=ctx.createLinearGradient(0,0,0,280);gradient.addColorStop(0,'rgba(16,185,129,0.5)');gradient.addColorStop(1,'rgba(16,185,129,0.02)');new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[{label:'Saved',data:data,backgroundColor:gradient,borderColor:'#10b981',borderWidth:1,borderRadius:6,maxBarThickness:36},{type:'line',label:'Goal',data:Array(12).fill(goal),borderColor:'#d1d5db',borderWidth:2,borderDash:[5,5],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:true,position:'top',align:'end',labels:{boxWidth:12,padding:16,font:{size:12}}}},scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)',drawBorder:false},ticks:{font:{size:11},callback:function(v){return '{{ user.currency }}'+v.toLocaleString();}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}});});
+</script>
+{% endblock %}

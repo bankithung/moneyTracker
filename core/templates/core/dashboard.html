@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ user.theme }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard - Wealth Planner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% load static %}{% static 'css/style.css' %}">
+</head>
+
+<body>
+    {% if messages %}
+    <div class="toast-container">
+        {% for message in messages %}
+        <div class="toast {% if message.tags %}toast-{{ message.tags }}{% endif %}">
+            <div class="toast-content">{{ message }}</div>
+            <button class="toast-close" onclick="this.parentElement.remove()"
+                style="background:none; border:none; font-size:1.2rem;">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    <script>
+        setTimeout(function () {
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach(t => {
+                t.style.opacity = '0';
+                t.style.transform = 'translateX(100%)';
+                setTimeout(() => t.remove(), 300);
+            });
+        }, 4000);
+    </script>
+    {% endif %}
+
+
+    <div class="container">
+
+        <header class="db-header">
+            <div class="db-brand">
+                <div class="db-brand-icon"><i class="fa-solid fa-wallet"></i></div>
+                <div class="db-brand-text">
+                    <h1>Wealth Planner</h1>
+                    {% if user.name %}<span>Welcome back, {{ user.name }}</span>{% else %}<span>Personal Finance</span>{% endif %}
+                </div>
+            </div>
+            <div class="db-controls">
+                <button class="db-ctrl-btn" onclick="openSettings()" title="Settings"><i
+                        class="fa-solid fa-gear"></i></button>
+                <a href="{% url 'toggle_theme' %}" class="db-ctrl-btn" title="Toggle Theme"><i
+                        class="fa-solid fa-circle-half-stroke"></i></a>
+                <a href="{% url 'logout' %}" class="db-ctrl-btn" title="Logout"><i
+                        class="fa-solid fa-arrow-right-from-bracket"></i></a>
+            </div>
+        </header>
+
+        <div class="db-tabs">
+            <button class="db-tab active" onclick="switchTab('dashboard')">
+                <i class="fa-solid fa-chart-pie"></i> <span>Plan & Track</span>
+            </button>
+            <button class="db-tab" onclick="switchTab('history')">
+                <i class="fa-solid fa-calendar-days"></i> <span>History</span>
+            </button>
+            <button class="db-tab" onclick="switchTab('advisor')">
+                <i class="fa-solid fa-robot"></i> <span>Advisor</span>
+            </button>
+        </div>
+
+        <!-- DASHBOARD VIEW -->
+        <div id="view-dashboard" class="view-section active">
+
+            <div class="db-month-nav">
+                <a href="?year={{ prev_month.year }}&month={{ prev_month.month }}" class="db-month-btn"><i
+                        class="fa-solid fa-chevron-left"></i></a>
+                <div class="db-month-title">{{ current_date|date:"F Y" }}</div>
+                <a href="?year={{ next_month.year }}&month={{ next_month.month }}" class="db-month-btn"><i
+                        class="fa-solid fa-chevron-right"></i></a>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <!-- Add Transaction Card -->
+                    <div class="card">
+                        <h3 style="margin-top:0">
+                            <span id="actionTitle"><i class="fa-solid fa-plus-circle"></i> Add Transaction</span>
+                        </h3>
+                        <form method="POST" action="{% url 'add_transaction' %}" id="txForm">
+                            {% csrf_token %}
+                            <input type="hidden" name="year" value="{{ current_date.year }}">
+                            <input type="hidden" name="month" value="{{ current_date.month }}">
+                            <input type="hidden" name="tx_id" id="tx_id" value="">
+
+                            <div class="input-group">
+                                <div style="flex:2;">
+                                    <input type="text" name="description" id="description"
+                                        placeholder="Description (e.g. Salary, Rent)" required>
+                                </div>
+                                <div style="flex:1;">
+                                    <input type="number" name="amount" id="amount" placeholder="0.00" step="0.01"
+                                        min="0.01" required>
+                                </div>
+                            </div>
+
+                            <div class="input-group" style="margin-top:10px;">
+                                <select name="category" id="category" class="db-select">
+                                    <option value="needs">Needs (Expense)</option>
+                                    <option value="wants">Wants (Expense)</option>
+                                    <option value="savings">Savings (Goal)</option>
+                                    <option value="income">Extra Income</option>
+                                </select>
+                                <button type="submit" id="addBtn" class="btn btn-primary" style="flex:1;">
+                                    <i class="fa-solid fa-plus"></i> Add
+                                </button>
+                            </div>
+                        </form>
+                        <small id="editNotice" style="color:var(--warning); display:none; margin-top:10px;">
+                            <i class="fa-solid fa-pen-to-square"></i> Editing mode. <a href="#" onclick="cancelEdit()"
+                                style="text-decoration:underline;">Cancel</a>
+                        </small>
+                    </div>
+
+                    <!-- Transaction List -->
+                    <div class="card">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3 style="margin:0"><i class="fa-solid fa-list-ul"></i> Transactions</h3>
+                            <a href="{% url 'transactions' %}?year={{ current_date.year }}&month={{ current_date.month }}"
+                                class="btn btn-outline" style="padding:6px 12px; font-size:0.85rem; margin-right: 8px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0;"
+                                title="View All Transactions">
+                                <span>View All</span>
+                            </a>
+                            <form method="GET" id="filterForm" style="margin:0;">
+                                <input type="hidden" name="year" value="{{ current_date.year }}">
+                                <input type="hidden" name="month" value="{{ current_date.month }}">
+                                <select name="filter" class="db-filter-select"
+                                    onchange="document.getElementById('filterForm').submit()">
+                                    <option value="all" {% if filter_category == 'all' %}selected{% endif %}>Show All
+                                    </option>
+                                    <option value="needs" {% if filter_category == 'needs' %}selected{% endif %}>Needs
+                                    </option>
+                                    <option value="wants" {% if filter_category == 'wants' %}selected{% endif %}>Wants
+                                    </option>
+                                    <option value="savings" {% if filter_category == 'savings' %}selected{% endif %}>
+                                        Savings</option>
+                                    <option value="income" {% if filter_category == 'income' %}selected{% endif %}>Income
+                                    </option>
+                                </select>
+                            </form>
+                        </div>
+
+                        <ul class="tx-list" id="txList">
+                            {% for tx in transactions %}
+                            <li class="tx-item" draggable="true" data-id="{{ tx.id }}" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)" ondragend="dragEnd(event)">
+                                <div class="tx-left-group">
+                                    <div class="handle"><i class="fa-solid fa-grip-vertical"></i></div>
+
+                                    <div class="tx-icon-box tx-{{ tx.category }}">
+                                        {% if tx.category == 'income' %}
+                                        <i class="fa-solid fa-sack-dollar"></i>
+                                        {% elif tx.category == 'needs' %}
+                                        <i class="fa-solid fa-house"></i>
+                                        {% elif tx.category == 'wants' %}
+                                        <i class="fa-solid fa-bag-shopping"></i>
+                                        {% elif tx.category == 'savings' %}
+                                        <i class="fa-solid fa-piggy-bank"></i>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="tx-details">
+                                        <span class="tx-title">{{ tx.description }}</span>
+                                        <span class="tx-date">{{ tx.date|date:"M j, Y" }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="tx-right-group">
+                                    <span class="tx-amount" style="color:var(--cat-{{ tx.category }});">{% if tx.category == 'income' %}+{% else %}-{% endif %}{{ user.currency }}{{ tx.amount|floatformat:2 }}</span>
+                                    <div class="tx-actions">
+                                        <button class="btn btn-icon"
+                                            onclick="editTx({{ tx.id }}, '{{ tx.description|escapejs }}', {{ tx.amount }}, '{{ tx.category }}')"
+                                            title="Edit">
+                                            <i class="fa-solid fa-pen" style="font-size:0.9rem;"></i>
+                                        </button>
+                                        <a href="{% url 'delete_transaction' tx.id %}?year={{ current_date.year }}&month={{ current_date.month }}"
+                                            class="btn btn-icon" onclick="return confirm('Delete this transaction?')"
+                                            title="Delete" style="color:var(--danger);">
+                                            <i class="fa-solid fa-trash" style="font-size:0.9rem;"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                            {% empty %}
+                            <li class="empty-box">
+                                <i class="fa-solid fa-clipboard"></i>
+                                <p>No transactions yet.</p>
+                            </li>
+                            {% endfor %}
+                        </ul>
+
+                        {% if total_pages > 1 %}
+                        <div
+                            style="display:flex; justify-content:center; gap:10px; margin-top:20px; padding-top:20px; border-top:1px solid var(--border);">
+                            {% if page > 1 %}
+                            <a href="?year={{ current_date.year }}&month={{ current_date.month }}&filter={{ filter_category }}&page={{ page|add:'-1' }}"
+                                class="btn btn-outline" style="font-size:0.85rem; padding:8px 14px;">
+                                <i class="fa-solid fa-chevron-left"></i> Previous
+                            </a>
+                            {% else %}
+                            <button class="btn btn-outline" disabled
+                                style="opacity:0.5; cursor:not-allowed; font-size:0.85rem; padding:8px 14px;">
+                                <i class="fa-solid fa-chevron-left"></i> Previous
+                            </button>
+                            {% endif %}
+
+                            <span
+                                style="display:flex; align-items:center; font-size:0.9rem; color:var(--text-sub); font-weight:500;">
+                                Page {{ page }} of {{ total_pages }}
+                            </span>
+
+                            {% if page < total_pages %} <a
+                                href="?year={{ current_date.year }}&month={{ current_date.month }}&filter={{ filter_category }}&page={{ page|add:'1' }}"
+                                class="btn btn-outline" style="font-size:0.85rem; padding:8px 14px;">
+                                Next <i class="fa-solid fa-chevron-right"></i>
+                                </a>
+                                {% else %}
+                                <button class="btn btn-outline" disabled
+                                    style="opacity:0.5; cursor:not-allowed; font-size:0.85rem; padding:8px 14px;">
+                                    Next <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                                {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Balance & Health -->
+                    <div class="card balance-card">
+                        <div class="balance-label">Remaining Balance</div>
+                        <div class="balance-total">{{ user.currency }}{{ balance|floatformat:2 }}</div>
+
+                        <div class="balance-grid">
+                            <div class="balance-stat">
+                                <span class="stat-sub">INCOME</span>
+                                <span class="stat-val val-income">{{ user.currency }}{{ total_income|floatformat:2 }}</span>
+                            </div>
+                            <div class="balance-stat">
+                                <span class="stat-sub">SPENT</span>
+                                <span class="stat-val val-expense">{{ user.currency }}{{ total_spent|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3><i class="fa-solid fa-chart-simple"></i> Budget Health</h3>
+
+                        <div class="budget-bar-container">
+                            <div class="budget-info">
+                                <span style="color:var(--cat-needs)">Needs ({{ user.rule_needs }}%)</span>
+                                <span>{{ user.currency }}{{ categories.needs|floatformat:0 }} / {{ user.currency }}{{ limits.needs|floatformat:0 }}</span>
+                            </div>
+                            <div class="progress-track">
+                                {% widthratio categories.needs limits.needs 100 as pct %}
+                                <div class="progress-fill"
+                                    style="width:{% if pct > 100 %}100{% elif pct %}{{ pct }}{% else %}0{% endif %}%; background:var(--cat-needs);">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="budget-bar-container">
+                            <div class="budget-info">
+                                <span style="color:var(--cat-wants)">Wants ({{ user.rule_wants }}%)</span>
+                                <span>{{ user.currency }}{{ categories.wants|floatformat:0 }} / {{ user.currency }}{{ limits.wants|floatformat:0 }}</span>
+                            </div>
+                            <div class="progress-track">
+                                {% widthratio categories.wants limits.wants 100 as pct %}
+                                <div class="progress-fill"
+                                    style="width:{% if pct > 100 %}100{% elif pct %}{{ pct }}{% else %}0{% endif %}%; background:var(--cat-wants);">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="budget-bar-container">
+                            <div class="budget-info">
+                                <span style="color:var(--cat-savings)">
+                                    Savings ({{ user.rule_savings }}%)
+                                    <a href="{% url 'savings' %}" title="View Analysis"
+                                        style="margin-left:5px; opacity:0.8;">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
+                                </span>
+                                <span>{{ user.currency }}{{ categories.savings|floatformat:0 }} / {{ user.currency }}{{ limits.savings|floatformat:0 }}</span>
+                            </div>
+                            <div class="progress-track">
+                                {% widthratio categories.savings limits.savings 100 as pct %}
+                                <div class="progress-fill"
+                                    style="width:{% if pct > 100 %}100{% elif pct %}{{ pct }}{% else %}0{% endif %}%; background:var(--cat-savings);">
+                                </div>
+                            </div>
+                            <!-- New Callout -->
+                            <div
+                                style="margin-top:12px; padding:10px; background:var(--bg-alt); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:0.85rem; color:var(--text-sub);">
+                                    <i class="fa-solid fa-chart-line"></i> Deep Dive
+                                </span>
+                                <a href="{% url 'savings' %}" class="btn btn-primary"
+                                    style="padding:4px 10px; font-size:0.8rem; background:var(--cat-savings); border-color:var(--cat-savings);">
+                                    Open Settings <i class="fa-solid fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY VIEW -->
+        <div id="view-history" class="view-section hidden">
+            <div class="card">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Yearly Overview</h3>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; min-width:500px;">
+                        <thead>
+                            <tr style="border-bottom:2px solid var(--border);">
+                                <th style="text-align:left; padding:12px;">Month</th>
+                                <th style="text-align:left; padding:12px;">Income</th>
+                                <th style="text-align:left; padding:12px;">Spent</th>
+                                <th style="text-align:left; padding:12px;">Saved</th>
+                                <th style="text-align:left; padding:12px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in history %}
+                            <tr style="border-bottom:1px solid var(--border);">
+                                <td style="padding:12px; font-weight:600;">{{ item.month }}</td>
+                                <td style="padding:12px;">{{ user.currency }}{{ item.total_income|floatformat:0 }}</td>
+                                <td style="padding:12px;">{{ user.currency }}{{ item.spent|floatformat:0 }}</td>
+                                <td
+                                    style="padding:12px; color:{% if item.saved >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                                    {{ user.currency }}{{ item.saved|floatformat:0 }}
+                                </td>
+                                <td style="padding:12px;">
+                                    {% if item.status == 'Saved' %}
+                                    <span
+                                        style="background:var(--success); color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">Saved</span>
+                                    {% else %}
+                                    <span
+                                        style="background:var(--danger); color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem;">Over</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="empty-box">
+                                    <p>No history data available.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADVISOR VIEW -->
+        <div id="view-advisor" class="view-section hidden">
+            <div class="card">
+                <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Financial Insights</h3>
+                <div id="adviceContainer">
+                    {% for item in advice %}
+                    <div
+                        style="background:var(--bg-alt); border-radius:8px; padding:15px; margin-bottom:15px; border-left:4px solid var(--primary);">
+                        <div style="font-weight:700; margin-bottom:5px;">{{ item.title }}</div>
+                        <div style="color:var(--text-sub);">{{ item.text }}</div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-box">
+                        <i class="fa-solid fa-check-circle"></i>
+                        <p>Everything looks good right now!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-box">
+            <h2><i class="fa-solid fa-sliders"></i> Settings</h2>
+            <form method="POST" action="{% url 'save_settings' %}" id="settingsForm">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label>Monthly Income</label>
+                    <div class="input-group">
+                        <input type="number" name="income" value="{{ user.income }}" step="0.01">
+                        <select name="currency" style="width:100px;">
+                            <option value="$" {% if user.currency == '$' %}selected{% endif %}>$ USD</option>
+                            <option value="₹" {% if user.currency == '₹' %}selected{% endif %}>₹ INR</option>
+                            <option value="€" {% if user.currency == '€' %}selected{% endif %}>€ EUR</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Budget Plan (50/30/20 Rule)</label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                        <div>
+                            <label style="font-size:0.8rem;">Needs %</label>
+                            <input type="number" id="ruleNeeds" name="rule_needs" value="{{ user.rule_needs }}">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem;">Wants %</label>
+                            <input type="number" id="ruleWants" name="rule_wants" value="{{ user.rule_wants }}">
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem;">Savings %</label>
+                            <input type="number" id="ruleSavings" name="rule_savings" value="{{ user.rule_savings }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Appearance</label>
+                    <select name="theme">
+                        <option value="light" {% if user.theme == 'light' %}selected{% endif %}>Light Mode</option>
+                        <option value="dark" {% if user.theme == 'dark' %}selected{% endif %}>Dark Mode</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap:12px; margin-top:24px;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">Save Changes</button>
+                    <button type="button" class="btn btn-outline" onclick="closeSettings()"
+                        style="flex:1;">Cancel</button>
+                </div>
+            </form>
+
+            <div style="margin-top:24px; border-top:1px solid var(--border); padding-top:24px;">
+                <button class="btn btn-danger"
+                    onclick="if(confirm('Reset all data?')) document.getElementById('resetForm').submit();"
+                    style="width:100%;">
+                    <i class="fa-solid fa-trash-can"></i> Reset Account Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <form id="resetForm" method="POST" action="{% url 'reset_data' %}" style="display:none;">{% csrf_token %}</form>
+
+    <script>
+        function switchTab(id) {
+            document.querySelectorAll('.view-section').forEach(e => e.classList.add('hidden'));
+            document.getElementById('view-' + id).classList.remove('hidden');
+            document.querySelectorAll('.db-tab').forEach(e => e.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        function openSettings() { document.getElementById('settingsModal').classList.add('show'); }
+        function closeSettings() { document.getElementById('settingsModal').classList.remove('show'); }
+        document.getElementById('settingsModal').onclick = function (e) { if (e.target === this) closeSettings(); }
+
+        function editTx(id, desc, amt, cat) {
+            document.getElementById('tx_id').value = id;
+            document.getElementById('description').value = desc;
+            document.getElementById('amount').value = amt;
+            document.getElementById('category').value = cat;
+            document.getElementById('actionTitle').innerHTML = '<i class="fa-solid fa-pen"></i> Edit Transaction';
+            document.getElementById('addBtn').innerHTML = '<i class="fa-solid fa-check"></i> Update';
+            const notice = document.getElementById('editNotice');
+            notice.style.display = 'block';
+
+            // Highlight input
+            document.getElementById('description').focus();
+        }
+
+        function cancelEdit() {
+            document.getElementById('tx_id').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('amount').value = '';
+            document.getElementById('actionTitle').innerHTML = '<i class="fa-solid fa-plus-circle"></i> Add Transaction';
+            document.getElementById('addBtn').innerHTML = '<i class="fa-solid fa-plus"></i> Add';
+            document.getElementById('editNotice').style.display = 'none';
+            return false;
+        }
+
+        // Validation
+        document.getElementById('settingsForm').onsubmit = function (e) {
+            const n = +document.querySelector('[name=rule_needs]').value || 0;
+            const w = +document.querySelector('[name=rule_wants]').value || 0;
+            const s = +document.querySelector('[name=rule_savings]').value || 0;
+            if (Math.abs(n + w + s - 100) > 0.1) {
+                e.preventDefault();
+                alert('Budget rules must sum to 100%');
+            }
+        }
+
+        // --- Drag and Drop Logic ---
+        let draggedItem = null;
+
+        function dragStart(e) {
+            draggedItem = e.currentTarget;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', draggedItem.innerHTML);
+            e.currentTarget.classList.add('dragging');
+        }
+
+        function dragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function dragEnter(e) {
+            e.currentTarget.closest('.tx-list').classList.add('drag-over');
+        }
+
+        function dragLeave(e) {
+            e.currentTarget.closest('.tx-list').classList.remove('drag-over');
+        }
+
+        function drop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+
+            const targetItem = e.currentTarget.closest('.tx-item');
+            
+            if (draggedItem !== targetItem && targetItem) {
+                // Swap items in DOM
+                const list = document.getElementById('txList');
+                const allItems = Array.from(list.querySelectorAll('.tx-item'));
+                const draggedIdx = allItems.indexOf(draggedItem);
+                const targetIdx = allItems.indexOf(targetItem);
+
+                if (draggedIdx < targetIdx) {
+                    targetItem.after(draggedItem);
+                } else {
+                    targetItem.before(draggedItem);
+                }
+                
+                // Persist new order
+                saveOrder();
+            }
+            
+            return false;
+        }
+
+        function dragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            const list = document.querySelector('.tx-list');
+            if(list) list.classList.remove('drag-over');
+        }
+
+        function saveOrder() {
+            const list = document.getElementById('txList');
+            const ids = Array.from(list.querySelectorAll('.tx-item')).map(item => item.getAttribute('data-id'));
+            
+            fetch('{% url "reorder_transactions" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ order: ids })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error('Save order failed:', data.error);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,101 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}History - Wealth Planner{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<header class="header">
+    <div class="brand">
+        <span class="brand-icon">🚀</span>
+        Wealth Planner
+    </div>
+    <div class="header-controls">
+        <a href="{% url 'toggle_theme' %}" class="btn btn-outline btn-icon" title="Toggle Theme">
+            🌗
+        </a>
+        <a href="{% url 'settings' %}" class="btn btn-outline">
+            ⚙️ Settings
+        </a>
+        <a href="{% url 'logout' %}" class="btn btn-outline">
+            Logout
+        </a>
+    </div>
+</header>
+
+<!-- Tab Navigation -->
+<nav class="tab-nav">
+    <a href="{% url 'dashboard' %}" class="tab-btn">
+        📊 Plan & Track
+    </a>
+    <a href="{% url 'history' %}" class="tab-btn active">
+        📅 Full History
+    </a>
+    <a href="{% url 'advisor' %}" class="tab-btn">
+        🤖 Smart Advisor
+    </a>
+</nav>
+
+<!-- Yearly Overview -->
+<div class="card">
+    <h3>📅 Yearly Overview</h3>
+
+    {% if history %}
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Total Income</th>
+                    <th>Spent</th>
+                    <th>Saved</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in history %}
+                <tr>
+                    <td><strong>{{ item.month }}</strong></td>
+                    <td>{{ user.currency }}{{ item.total_income|floatformat:2 }}</td>
+                    <td>{{ user.currency }}{{ item.spent|floatformat:2 }}</td>
+                    <td style="color:{% if item.saved >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                        {{ user.currency }}{{ item.saved|floatformat:2 }}
+                    </td>
+                    <td>
+                        <span class="status-badge {% if item.status == 'Saved' %}saved{% else %}over{% endif %}">
+                            {{ item.status }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📊</div>
+        <p>No transaction history yet.</p>
+        <p class="text-muted">Start adding transactions to see your history!</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Backup / Restore -->
+<div class="card">
+    <h3>💾 Backup / Restore</h3>
+    <div class="flex flex-wrap gap-2">
+        <a href="{% url 'export_data' %}" class="btn btn-outline">
+            💾 Save Data to File
+        </a>
+        <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">
+            📂 Load Data File
+        </button>
+        <form method="POST" action="{% url 'import_data' %}" enctype="multipart/form-data" id="importForm"
+            style="display:none;">
+            {% csrf_token %}
+            <input type="file" id="importFile" name="file" accept=".json"
+                onchange="document.getElementById('importForm').submit()">
+        </form>
+    </div>
+</div>
+{% endblock %}

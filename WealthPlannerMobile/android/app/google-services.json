@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "478389137339",
+    "project_id": "kinikaase-e15bd",
+    "storage_bucket": "kinikaase-e15bd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:478389137339:android:c312210bf741243c059e9e",
+        "android_client_info": {
+          "package_name": "com.wealthplannermobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6YQwGVwJZc7J0gZMPzIH7-1AbkJYLRzI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

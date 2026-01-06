@@ -1,0 +1,58 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Verify OTP - Wealth Planner</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body>
+    {% if messages %}
+    <div class="toast-container">
+        {% for message in messages %}
+        <div class="toast toast-{{ message.tags }}">
+            <i
+                class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+            <span class="toast-content">{{ message }}</span>
+            <i class="fa-solid fa-xmark toast-close" onclick="this.parentElement.remove()"></i>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="auth-layout">
+        <div class="auth-box">
+            <div class="auth-icon">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h1 class="auth-title">Verify Access</h1>
+            <p class="auth-sub">Enter the code sent to <b>{{ phone }}</b></p>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group" style="text-align:center;">
+                    <label for="otp" style="display:block; margin-bottom:10px;">One-Time Password</label>
+                    <div style="position:relative; max-width:200px; margin:0 auto;">
+                        <input type="text" id="otp" name="otp" placeholder="• • • • • •" required maxlength="6"
+                            style="text-align:center; letter-spacing:8px; font-weight:800; font-size:1.5rem; padding:10px;">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; padding:12px;">
+                    Verify <i class="fa-solid fa-check"></i>
+                </button>
+            </form>
+
+            <div style="margin-top:20px;">
+                <a href="{% url 'login' %}" style="font-size:0.9rem; color:var(--text-sub);">
+                    <i class="fa-solid fa-arrow-left"></i> Change Number
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

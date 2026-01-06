@@ -1,0 +1,93 @@
+﻿{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Settings - Wealth Planner{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div class="brand">
+        <span class="brand-icon"></span>
+        Wealth Planner
+    </div>
+    <div class="header-controls">
+        <a href="{% url 'toggle_theme' %}" class="btn btn-outline btn-icon"></a>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline"> Dashboard</a>
+        <a href="{% url 'logout' %}" class="btn btn-outline">Logout</a>
+    </div>
+</header>
+
+<div class="card">
+    <h2> Settings</h2>
+    <form method="POST">
+        {% csrf_token %}
+        
+        <div class="settings-section">
+            <div class="section-title"> Monthly Income</div>
+            <div class="form-group">
+                <label for="income">Fixed Standard Monthly Income</label>
+                <input type="number" id="income" name="income" value="{{ user.income }}" step="0.01" min="0" placeholder="0.00">
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <div class="section-title"> Currency</div>
+            <div class="form-group">
+                <label for="currency">Currency Symbol</label>
+                <select id="currency" name="currency">
+                    {% for code, name in currencies %}
+                    <option value="{{ code }}" {% if user.currency == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <div class="section-title"> Budget Rules (Must sum to 100%)</div>
+            <div class="rule-grid">
+                <div class="rule-item">
+                    <label for="rule_needs">Needs %</label>
+                    <input type="number" id="rule_needs" name="rule_needs" value="{{ user.rule_needs }}" min="0" max="100" required>
+                </div>
+                <div class="rule-item">
+                    <label for="rule_wants">Wants %</label>
+                    <input type="number" id="rule_wants" name="rule_wants" value="{{ user.rule_wants }}" min="0" max="100" required>
+                </div>
+                <div class="rule-item">
+                    <label for="rule_savings">Savings %</label>
+                    <input type="number" id="rule_savings" name="rule_savings" value="{{ user.rule_savings }}" min="0" max="100" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <div class="section-title"> Theme</div>
+            <div class="form-group">
+                <label for="theme">Appearance</label>
+                <select id="theme" name="theme">
+                    <option value="light" {% if user.theme == "light" %}selected{% endif %}> Light Mode</option>
+                    <option value="dark" {% if user.theme == "dark" %}selected{% endif %}> Dark Mode</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;"> Save Changes</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="danger-zone">
+        <h4> Danger Zone</h4>
+        <p>This will delete all your transactions and reset settings to defaults.</p>
+        <form method="POST" action="{% url 'reset_data' %}" onsubmit="return confirm('Are you sure? This will delete ALL your data!');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger"> Reset Everything</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <h3> Account Info</h3>
+    <p><strong>Phone:</strong> {{ user.phone }}</p>
+    <p><strong>Member since:</strong> {{ user.created_at|date:"F d, Y" }}</p>
+</div>
+{% endblock %}
